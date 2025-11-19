@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emoji Luck: Ultimate Fixed</title>
+    <title>Sticker Slots: Ultimate</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap');
@@ -28,6 +28,31 @@
             background: linear-gradient(145deg, #1e293b, #0f172a);
             box-shadow: inset 2px 2px 5px rgba(0,0,0,0.5), inset -2px -2px 5px rgba(255,255,255,0.05);
             z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Стили для изображений (Стикеров) */
+        .emoji-content {
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 2px rgba(0,0,0,0.5));
+            transition: transform 0.1s;
+        }
+
+        /* Анимация вращения (блюр + тряска) */
+        .spinning .emoji-content { 
+            filter: blur(5px); 
+            opacity: 0.8;
+            animation: slotBlur 0.1s infinite linear; 
+        }
+
+        @keyframes slotBlur {
+            0% { transform: translateY(-15px) scale(0.9); }
+            50% { transform: translateY(15px) scale(0.9); }
+            100% { transform: translateY(-15px) scale(0.9); }
         }
 
         /* Эффект победы ячейки */
@@ -97,20 +122,6 @@
         }
         @keyframes popIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
         
-        .spinning .emoji-content { 
-            filter: blur(4px); 
-            opacity: 0.7;
-            /* Вернул анимацию тряски */
-            animation: slotBlur 0.1s infinite linear; 
-        }
-
-        @keyframes slotBlur {
-            0% { transform: translateY(-15px) scale(0.9); }
-            50% { transform: translateY(15px) scale(0.9); }
-            100% { transform: translateY(-15px) scale(0.9); }
-        }
-        /* ---------------------------------- */
-
         .bounce { animation: land 0.3s ease-out; }
         @keyframes land { 0% { transform: translateY(-20px); } 50% { transform: translateY(5px); } 100% { transform: translateY(0); } }
 
@@ -123,7 +134,7 @@
         <div class="flex items-center gap-2">
             <span class="text-2xl">🎰</span>
             <div class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
-                EMOJI LUCK
+                STICKER LUCK
             </div>
         </div>
         <div class="flex gap-3">
@@ -200,38 +211,40 @@
                 </div>
             </div>
 
-            <!-- ЛЕГЕНДА -->
+            <!-- ЛЕГЕНДА (ОБНОВЛЕНА ПОД КАРТИНКИ) -->
             <div class="mt-6 grid grid-cols-4 gap-2 text-center opacity-90 max-w-md mx-auto">
+                <!-- Самые редкие -->
                 <div class="bg-slate-800/60 p-2 rounded border border-slate-700/50 flex flex-col items-center justify-center">
-                    <span class="text-xl">💎</span>
+                    <img src="stickers/8.webp" class="w-8 h-8 object-contain mb-1">
                     <span class="text-[10px] font-bold text-yellow-400">x100</span>
                 </div>
                 <div class="bg-slate-800/60 p-2 rounded border border-slate-700/50 flex flex-col items-center justify-center">
-                    <span class="text-xl">7️⃣</span>
+                    <img src="stickers/7.webp" class="w-8 h-8 object-contain mb-1">
                     <span class="text-[10px] font-bold text-yellow-400">x50</span>
                 </div>
                 <div class="bg-slate-800/60 p-2 rounded border border-slate-700/50 flex flex-col items-center justify-center">
-                    <span class="text-xl">🔔</span>
+                    <img src="stickers/6.webp" class="w-8 h-8 object-contain mb-1">
                     <span class="text-[10px] font-bold text-yellow-400">x25</span>
                 </div>
                 <div class="bg-slate-800/60 p-2 rounded border border-slate-700/50 flex flex-col items-center justify-center">
-                    <span class="text-xl">🍀</span>
+                    <img src="stickers/5.webp" class="w-8 h-8 object-contain mb-1">
                     <span class="text-[10px] font-bold text-yellow-400">x20</span>
                 </div>
+                <!-- Средние и частые -->
                 <div class="bg-slate-800/60 p-2 rounded border border-slate-700/50 flex flex-col items-center justify-center">
-                    <span class="text-xl">🍉</span>
+                    <img src="stickers/4.webp" class="w-8 h-8 object-contain mb-1">
                     <span class="text-[10px] font-bold text-yellow-400">x15</span>
                 </div>
                 <div class="bg-slate-800/60 p-2 rounded border border-slate-700/50 flex flex-col items-center justify-center">
-                    <span class="text-xl">🍇</span>
+                    <img src="stickers/3.webp" class="w-8 h-8 object-contain mb-1">
                     <span class="text-[10px] font-bold text-yellow-400">x10</span>
                 </div>
                 <div class="bg-slate-800/60 p-2 rounded border border-slate-700/50 flex flex-col items-center justify-center">
-                    <span class="text-xl">🍋</span>
+                    <img src="stickers/2.webp" class="w-8 h-8 object-contain mb-1">
                     <span class="text-[10px] font-bold text-yellow-400">x10</span>
                 </div>
                 <div class="bg-slate-800/60 p-2 rounded border border-slate-700/50 flex flex-col items-center justify-center">
-                    <span class="text-xl">🍒</span>
+                    <img src="stickers/1.webp" class="w-8 h-8 object-contain mb-1">
                     <span class="text-[10px] font-bold text-yellow-400">x5</span>
                 </div>
             </div>
@@ -249,16 +262,17 @@
     </div>
 
     <script>
-        // --- КОНФИГ ---
+        // --- КОНФИГ: Ссылки на файлы 1.webp - 8.webp ---
+        // 8 - самый редкий (x50), 1 - самый частый (x5)
         const SYMBOLS = [
-            { icon: '💎', weight: 2, payout: 100 },
-            { icon: '7️⃣', weight: 5, payout: 50 },
-            { icon: '🔔', weight: 10, payout: 25 },
-            { icon: '🍀', weight: 12, payout: 20 },
-            { icon: '🍉', weight: 15, payout: 15 },
-            { icon: '🍇', weight: 20, payout: 10 },
-            { icon: '🍋', weight: 20, payout: 10 },
-            { icon: '🍒', weight: 30, payout: 5 }
+            { icon: 'stickers/8.webp', weight: 3, payout: 100 },
+            { icon: 'stickers/7.webp', weight: 5, payout: 50 },
+            { icon: 'stickers/6.webp', weight: 10, payout: 25 },
+            { icon: 'stickers/5.webp', weight: 12, payout: 20 },
+            { icon: 'stickers/4.webp', weight: 15, payout: 15 },
+            { icon: 'stickers/3.webp', weight: 20, payout: 10 },
+            { icon: 'stickers/2.webp', weight: 20, payout: 10 },
+            { icon: 'stickers/1.webp', weight: 30, payout: 5 }
         ];
 
         const LINES_CONFIG = [
@@ -273,6 +287,8 @@
             { path: [[1,0], [2,1], [1,2]], color: '#6366f1' }
         ];
 
+        // --- СОСТОЯНИЕ ---
+        // По умолчанию заполняем самыми частыми картинками (1.webp), чтобы не было пустых мест
         let state = {
             balance: parseInt(localStorage.getItem('slotBal')) || 1000,
             bet: 20,
@@ -280,7 +296,7 @@
             spinning: false,
             auto: false,
             sound: true,
-            grid: Array(3).fill().map(() => Array(3).fill('❓'))
+            grid: Array(3).fill().map(() => Array(3).fill('stickers/1.webp'))
         };
 
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -332,9 +348,10 @@
             for(let r=0; r<3; r++) {
                 for(let c=0; c<3; c++) {
                     const cell = document.createElement('div');
-                    cell.className = 'slot-cell rounded-lg flex items-center justify-center text-5xl overflow-hidden';
+                    cell.className = 'slot-cell rounded-lg overflow-hidden';
                     cell.id = `c-${r}-${c}`;
-                    cell.innerHTML = `<div class="emoji-content">${state.grid[r][c]}</div>`;
+                    // Создаем <img> вместо текста
+                    cell.innerHTML = `<img src="${state.grid[r][c]}" class="emoji-content" alt="icon" draggable="false">`;
                     dom.grid.appendChild(cell);
                 }
             }
@@ -451,17 +468,19 @@
             for(let c=0; c<3; c++) {
                 for(let r=0; r<3; r++) {
                     const cell = document.getElementById(`c-${r}-${c}`);
-                    const content = cell.querySelector('.emoji-content');
+                    const content = cell.querySelector('.emoji-content'); // Это IMG
                     cell.classList.add('spinning');
                     
                     const iv = setInterval(() => {
-                        content.innerText = pool0[Math.floor(Math.random()*pool0.length)];
+                        // Меняем SRC картинки
+                        content.src = pool0[Math.floor(Math.random()*pool0.length)];
                     }, 80);
 
                     setTimeout(() => {
                         clearInterval(iv);
                         cell.classList.remove('spinning');
-                        content.innerText = res[r][c];
+                        // Устанавливаем финальный SRC
+                        content.src = res[r][c];
                         content.classList.add('bounce');
                         sounds.land();
                         setTimeout(() => content.classList.remove('bounce'), 300);
