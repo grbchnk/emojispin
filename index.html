@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jiguluck: Ultimate</title>
+    <title>JIGULUCK: Ultimate</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap');
@@ -216,11 +216,11 @@
                 <!-- Самые редкие -->
                 <div class="bg-slate-800/60 p-2 rounded border border-slate-700/50 flex flex-col items-center justify-center">
                     <img src="stickers/8.webp" class="w-8 h-8 object-contain mb-1">
-                    <span class="text-[10px] font-bold text-yellow-400">x100</span>
+                    <span class="text-[10px] font-bold text-yellow-400">x500</span>
                 </div>
                 <div class="bg-slate-800/60 p-2 rounded border border-slate-700/50 flex flex-col items-center justify-center">
                     <img src="stickers/7.webp" class="w-8 h-8 object-contain mb-1">
-                    <span class="text-[10px] font-bold text-yellow-400">x50</span>
+                    <span class="text-[10px] font-bold text-yellow-400">x100</span>
                 </div>
                 <div class="bg-slate-800/60 p-2 rounded border border-slate-700/50 flex flex-col items-center justify-center">
                     <img src="stickers/6.webp" class="w-8 h-8 object-contain mb-1">
@@ -255,7 +255,7 @@
     <div id="win-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/90 backdrop-blur-sm" onclick="closeModal()">
         <div class="text-center relative animate-bounce">
             <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-yellow-500 rounded-full mix-blend-screen filter blur-[100px] opacity-30"></div>
-            <h2 class="big-win-text mb-4">BIG WIN!</h2>
+            <h2 class="big-win-text mb-4">НИХУЯ СЕБЕ ВЫИГРЫШ!!!</h2>
             <p class="text-6xl font-mono text-white font-bold drop-shadow-lg" id="modal-amount">0</p>
             <p class="text-slate-400 mt-6 text-sm uppercase tracking-widest">Нажмите для продолжения</p>
         </div>
@@ -265,10 +265,10 @@
         // --- КОНФИГ: Ссылки на файлы 1.webp - 8.webp ---
         // 8 - самый редкий (x50), 1 - самый частый (x5)
         const SYMBOLS = [
-            { icon: 'stickers/8.webp', weight: 3, payout: 100 },
-            { icon: 'stickers/7.webp', weight: 5, payout: 50 },
+            { icon: 'stickers/8.webp', weight: 3, payout: 500 },
+            { icon: 'stickers/7.webp', weight: 5, payout: 100 },
             { icon: 'stickers/6.webp', weight: 10, payout: 25 },
-            { icon: 'stickers/5.webp', weight: 12, payout: 20 },
+            { icon: 'stickers/5.webp', weight: 13, payout: 20 },
             { icon: 'stickers/4.webp', weight: 15, payout: 15 },
             { icon: 'stickers/3.webp', weight: 20, payout: 10 },
             { icon: 'stickers/2.webp', weight: 20, payout: 10 },
@@ -383,11 +383,19 @@
         function previewLines(n) { dom.svg.innerHTML = Array(n).fill(0).map((_, i) => drawPath(i)).join(''); }
         function clearLines() { dom.svg.innerHTML = ''; }
 
-        function getPool(boostSyms = []) {
+        function getPool(boostSyms = [], luckValue = 0) {
             let pool = [];
+            
             SYMBOLS.forEach(s => {
                 let count = s.weight;
-                if(boostSyms.includes(s.icon)) count += 30;
+                
+                // Если символ был в прошлой колонке, добавляем к нему текущую удачу напрямую.
+                // Если luckValue = 10, добавится чуть-чуть.
+                // Если luckValue = 200, этот символ заполонит всё.
+                if(boostSyms.includes(s.icon)) {
+                    count += luckValue;
+                }
+                
                 for(let i=0; i<count; i++) pool.push(s.icon);
             });
             return pool;
@@ -437,6 +445,21 @@
             const cost = state.bet * state.lines;
             if(state.spinning || state.balance < cost) return;
 
+            // --- ГЕНЕРАЦИЯ УДАЧИ С НИЗКИМ ШАНСОМ НА ВЫСОКОЕ ЗНАЧЕНИЕ ---
+            
+            const r = Math.random(); 
+            // r * r создает кривую, где результаты стремятся к нулю.
+            const currentLuck = Math.floor(r * r * 61);
+
+            // Визуализация шанса в консоли
+            let luckColor = '#f87171'; // Красный (плохо)
+            if(currentLuck > 20) luckColor = '#fbbf24'; // Желтый (норм)
+            if(currentLuck > 40) luckColor = '#4ade80'; // Зеленый (супер)
+
+            console.log(`%c🎲 LUCK: ${currentLuck}/60`, 
+                `color: ${luckColor}; font-weight: 900; font-size: 14px; border: 1px solid ${luckColor}; padding: 2px 5px; border-radius: 4px;`);
+            // ------------------------------------------------------------
+
             state.spinning = true;
             state.balance -= cost;
             dom.win.innerText = "0";
@@ -448,38 +471,38 @@
             document.querySelectorAll('.win-anim').forEach(el => el.classList.remove('win-anim'));
 
             let res = [[], [], []];
+            
             let c0 = [];
-            let pool0 = getPool();
+            let pool0 = getPool([], 0); 
             for(let r=0; r<3; r++) { 
                 let s = pool0[Math.floor(Math.random()*pool0.length)]; 
                 res[r][0] = s; c0.push(s); 
             }
-
             let c1 = [];
-            let pool1 = getPool(c0);
+            let pool1 = getPool(c0, currentLuck); 
             for(let r=0; r<3; r++) { 
                 let s = pool1[Math.floor(Math.random()*pool1.length)]; 
                 res[r][1] = s; c1.push(s); 
             }
 
-            let pool2 = getPool(c1);
+            // Колонка 3: Влияет Luck.
+            let pool2 = getPool(c1, currentLuck);
             for(let r=0; r<3; r++) res[r][2] = pool2[Math.floor(Math.random()*pool2.length)];
 
+            // Анимация
             for(let c=0; c<3; c++) {
                 for(let r=0; r<3; r++) {
                     const cell = document.getElementById(`c-${r}-${c}`);
-                    const content = cell.querySelector('.emoji-content'); // Это IMG
+                    const content = cell.querySelector('.emoji-content');
                     cell.classList.add('spinning');
                     
                     const iv = setInterval(() => {
-                        // Меняем SRC картинки
                         content.src = pool0[Math.floor(Math.random()*pool0.length)];
                     }, 80);
 
                     setTimeout(() => {
                         clearInterval(iv);
                         cell.classList.remove('spinning');
-                        // Устанавливаем финальный SRC
                         content.src = res[r][c];
                         content.classList.add('bounce');
                         sounds.land();
@@ -540,4 +563,3 @@
     </script>
 </body>
 </html>
-
