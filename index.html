@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JIGULUCK: Ultimate Remastered</title>
+    <title>JIGULUCK: Bonus Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap');
 
-        :root { --reel-height: 120px; }
+        :root { --reel-height: 100px; }
         
         body {
             font-family: 'Montserrat', sans-serif;
@@ -27,50 +27,64 @@
             -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.08);
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            transition: all 0.5s ease;
+        }
+
+        /* Стиль активного бонуса */
+        .bonus-active .glass-panel#game-wrapper {
+            border: 2px solid #fbbf24;
+            box-shadow: 0 0 30px rgba(251, 191, 36, 0.3);
+        }
+        .bonus-active body {
+            background-image: none; /* Можно затемнить фон */
         }
 
         .slot-window {
             overflow: hidden;
             position: relative;
-            z-index: 10; /* ИЗМЕНЕНО: Добавлен z-index, чтобы быть выше линий */
-            mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
-            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+            z-index: 10;
+            mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
         }
 
         .reel-col {
             width: 100%; height: 100%;
             display: flex; flex-direction: column; align-items: center;
             will-change: transform; 
+            border-right: 1px solid rgba(255,255,255,0.05);
         }
+        .reel-col:last-child { border-right: none; }
 
         .slot-symbol {
             height: var(--reel-height);
             width: 100%;
             display: flex; align-items: center; justify-content: center;
-            font-size: 3.5rem;
+            font-size: 2.5rem;
         }
 
         .slot-symbol img {
-            width: 80%; height: 80%;
+            width: 70%; height: 70%;
             object-fit: contain;
             filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5));
         }
 
-        .blur-move { transform: scale(1); }
-
         #paylines-svg {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 1; /* ИЗМЕНЕНО: Снижен с 20 до 1 (ниже символов) */
+            z-index: 1;
             pointer-events: none;
         }
 
         .payline-path {
             fill: none; 
-            stroke-width: 1.5; 
-            stroke-linecap: round; stroke-linejoin: round;
-            filter: drop-shadow(0 0 2px rgba(0,0,0,1)); 
-            stroke-dasharray: 1000; stroke-dashoffset: 1000;
-            animation: drawLine 0.5s forwards ease-out;
+            stroke-width: 5;
+            stroke-linecap: round; 
+            stroke-linejoin: round;
+            vector-effect: non-scaling-stroke;
+            filter: drop-shadow(0 0 4px rgba(0,0,0,0.8)); 
+            stroke-dasharray: 2000; 
+            stroke-dashoffset: 2000;
+            animation: drawLine 0.5s forwards ease-in-out;
+            opacity: 1;
         }
         @keyframes drawLine { to { stroke-dashoffset: 0; } }
 
@@ -81,10 +95,13 @@
             box-shadow: 0 0 10px rgba(37, 99, 235, 0.5);
         }
 
-        .win-pulse { animation: winPulse 0.8s infinite alternate; z-index: 10; }
+        .win-pulse { 
+            animation: winPulse 0.5s infinite alternate ease-in-out; 
+            z-index: 10; 
+        }
         @keyframes winPulse {
             0% { transform: scale(1); filter: brightness(1); }
-            100% { transform: scale(1.15); filter: brightness(1.5) drop-shadow(0 0 10px gold); }
+            100% { transform: scale(1.2); filter: brightness(1.5) drop-shadow(0 0 15px rgba(255, 215, 0, 0.6)); }
         }
 
         .spin-btn {
@@ -100,6 +117,13 @@
             transform: translateY(6px); box-shadow: 0 0 0 #581c87;
         }
 
+        /* Кнопка при бонусе (золотая) */
+        .bonus-active .spin-btn {
+            background: linear-gradient(180deg, #fcd34d 0%, #d97706 100%);
+            box-shadow: 0 6px 0 #92400e;
+            color: #78350f;
+        }
+
         .auto-btn {
             background: linear-gradient(180deg, #475569 0%, #1e293b 100%);
             box-shadow: 0 6px 0 #0f172a, 0 15px 20px rgba(0,0,0,0.4);
@@ -113,14 +137,16 @@
         .auto-btn:active {
             transform: translateY(6px); box-shadow: 0 0 0 #0f172a;
         }
+        .auto-btn:disabled {
+            opacity: 0.5; cursor: not-allowed; transform: translateY(6px); box-shadow: none;
+        }
 
         .modal-backdrop { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
         .float-text {
             position: absolute;
-            top: 200px; 
-            left: 50%; 
+            top: 50%; left: 50%; 
             transform: translate(-50%, -50%); 
             color: #fbbf24; 
             font-weight: 900; 
@@ -128,35 +154,40 @@
             text-shadow: 0 4px 0 #000, 0 0 30px rgba(251, 191, 36, 0.5);
             pointer-events: none;
             z-index: 100; 
-            animation: floatPop 1.2s ease-out forwards;
+            animation: floatPop 1.5s ease-out forwards;
             white-space: nowrap;
         }
 
         @keyframes floatPop {
             0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-            20% { transform: translate(-50%, -80%) scale(1.2); opacity: 1; }
+            15% { transform: translate(-50%, -80%) scale(1.2); opacity: 1; }
             100% { transform: translate(-50%, -200%) scale(1); opacity: 0; }
+        }
+
+        /* Анимация для бонусного окна */
+        .bonus-modal-content {
+            background: linear-gradient(135deg, #4c1d95 0%, #1e1b4b 100%);
+            border: 4px solid #fbbf24;
+            box-shadow: 0 0 50px rgba(251, 191, 36, 0.5);
         }
     </style>
 </head>
-<body class="w-full min-h-screen bg-[url('https://images.unsplash.com/photo-1596838132731-3301c3fd4317?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center bg-fixed flex flex-col items-center py-6">
+<body class="w-full min-h-screen bg-[url('https://images.unsplash.com/photo-1596838132731-3301c3fd4317?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center bg-fixed flex flex-col items-center py-4">
     
     <div class="absolute inset-0 bg-gradient-to-b from-slate-900/90 via-slate-900/80 to-slate-900/95 backdrop-blur-[2px] pointer-events-none fixed"></div>
 
-    <div class="relative z-10 w-full max-w-md flex flex-col items-center gap-4 px-2">
+    <div class="relative z-10 w-full max-w-2xl flex flex-col items-center gap-3 px-2">
         
+        <!-- Header -->
         <div class="w-full flex justify-between items-end">
             <div class="glass-panel px-4 py-2 rounded-2xl cursor-pointer hover:bg-white/5 transition group relative" onclick="game.resetBalance()">
                 <div class="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Баланс</div>
-                <div class="text-2xl font-mono font-bold text-green-400" id="ui-balance">1000</div>
-                <div class="absolute top-full mt-2 left-0 bg-slate-800 text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap border border-slate-600">
-                    Нажми для пополнения
-                </div>
+                <div class="text-2xl font-mono font-bold text-green-400" id="ui-balance">2000</div>
             </div>
 
             <div class="text-center pb-1">
-                <h1 class="text-3xl font-black italic text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 drop-shadow-lg tracking-tighter">
-                    JIGULUCK
+                <h1 class="text-3xl md:text-4xl font-black italic text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 drop-shadow-lg tracking-tighter">
+                    JIGU<span class="text-white">XL</span>
                 </h1>
             </div>
 
@@ -166,43 +197,52 @@
             </div>
         </div>
 
-        <div class="glass-panel p-4 rounded-[2rem] w-full shadow-2xl relative" id="game-wrapper">
+        <!-- Main Game Area -->
+        <div class="glass-panel p-3 md:p-5 rounded-[2rem] w-full shadow-2xl relative transition-colors duration-500" id="game-wrapper">
             
-            <div class="bg-slate-950 rounded-xl border-4 border-slate-800 shadow-inner relative overflow-hidden mb-4" style="height: 360px;">
-                <!-- ИЗМЕНЕНО: z-10 заменен на z-20 в градиентах ниже -->
-                <div class="absolute top-0 left-0 w-full h-8 bg-gradient-to-b from-black/60 to-transparent z-20 pointer-events-none"></div>
-                <div class="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-black/60 to-transparent z-20 pointer-events-none"></div>
+            <!-- Info Strip (Bonus Counter) -->
+            <div id="bonus-strip" class="hidden absolute -top-4 left-0 w-full flex justify-center z-30">
+                 <div class="bg-yellow-500 text-black font-black px-6 py-1 rounded-full shadow-[0_0_20px_rgba(234,179,8,0.6)] animate-pulse border-2 border-white">
+                    FREE SPINS: <span id="fs-counter">15</span>
+                 </div>
+            </div>
+
+            <!-- Slot Window -->
+            <div class="bg-slate-950 rounded-xl border-4 border-slate-800 shadow-inner relative overflow-hidden mb-4" style="height: 300px;">
+                <div class="absolute top-0 left-0 w-full h-6 bg-gradient-to-b from-black/70 to-transparent z-20 pointer-events-none"></div>
+                <div class="absolute bottom-0 left-0 w-full h-6 bg-gradient-to-t from-black/70 to-transparent z-20 pointer-events-none"></div>
                 
-                <div class="grid grid-cols-3 h-full w-full relative slot-window" id="slot-machine"></div>
+                <div class="grid grid-cols-5 h-full w-full relative slot-window" id="slot-machine"></div>
                 <svg id="paylines-svg" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
             </div>
 
+            <!-- Controls -->
             <div class="space-y-3">
                 <div class="grid grid-cols-2 gap-3">
                     <div class="bg-slate-800/50 rounded-xl p-2 border border-slate-700 flex items-center justify-between">
-                        <button class="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 font-bold text-lg active:scale-95 transition" onclick="game.adjustBet(-10)">-</button>
+                        <button class="bet-ctrl w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 font-bold text-lg active:scale-95 transition disabled:opacity-50" onclick="game.adjustBet(-10)">-</button>
                         <div class="text-center">
                             <div class="text-[9px] text-slate-400 uppercase font-bold">Ставка</div>
                             <div class="font-mono font-bold text-white text-lg" id="ui-bet">20</div>
                         </div>
-                        <button class="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 font-bold text-lg active:scale-95 transition" onclick="game.adjustBet(10)">+</button>
+                        <button class="bet-ctrl w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 font-bold text-lg active:scale-95 transition disabled:opacity-50" onclick="game.adjustBet(10)">+</button>
                     </div>
 
                     <div class="bg-slate-800/50 rounded-xl p-2 border border-slate-700 flex flex-col justify-center items-center">
-                        <div class="text-[9px] text-slate-400 uppercase font-bold mb-1">Линии</div>
+                        <div class="text-[9px] text-slate-400 uppercase font-bold mb-1">Линии (Макс 9)</div>
                         <div class="flex gap-1 w-full justify-between px-1" id="lines-control-panel">
-                            <button class="line-btn w-6 h-6 rounded bg-slate-700 text-[10px] font-bold hover:bg-slate-600 transition border border-transparent" onclick="game.setLines(1)">1</button>
-                            <button class="line-btn w-6 h-6 rounded bg-slate-700 text-[10px] font-bold hover:bg-slate-600 transition border border-transparent" onclick="game.setLines(3)">3</button>
-                            <button class="line-btn w-6 h-6 rounded bg-slate-700 text-[10px] font-bold hover:bg-slate-600 transition border border-transparent" onclick="game.setLines(5)">5</button>
-                            <button class="line-btn w-6 h-6 rounded bg-slate-700 text-[10px] font-bold hover:bg-slate-600 transition border border-transparent" onclick="game.setLines(7)">7</button>
-                            <button class="line-btn w-6 h-6 rounded bg-slate-700 text-[10px] font-bold hover:bg-slate-600 transition border border-transparent" onclick="game.setLines(9)">9</button>
+                            <button class="line-btn w-6 h-6 rounded bg-slate-700 text-[10px] font-bold hover:bg-slate-600 transition border border-transparent disabled:opacity-50" onclick="game.setLines(1)">1</button>
+                            <button class="line-btn w-6 h-6 rounded bg-slate-700 text-[10px] font-bold hover:bg-slate-600 transition border border-transparent disabled:opacity-50" onclick="game.setLines(3)">3</button>
+                            <button class="line-btn w-6 h-6 rounded bg-slate-700 text-[10px] font-bold hover:bg-slate-600 transition border border-transparent disabled:opacity-50" onclick="game.setLines(5)">5</button>
+                            <button class="line-btn w-6 h-6 rounded bg-slate-700 text-[10px] font-bold hover:bg-slate-600 transition border border-transparent disabled:opacity-50" onclick="game.setLines(7)">7</button>
+                            <button class="line-btn w-6 h-6 rounded bg-slate-700 text-[10px] font-bold hover:bg-slate-600 transition border border-transparent disabled:opacity-50" onclick="game.setLines(9)">9</button>
                         </div>
                     </div>
                 </div>
 
                 <div class="bg-slate-900/40 rounded-lg p-2 flex justify-between items-center text-xs font-bold border border-white/5">
-                    <span class="text-slate-400">ВСЕГО: <span id="ui-total-bet" class="text-white text-sm ml-1">100</span></span>
-                    <span id="status-text" class="text-right text-slate-300">Удачи!</span>
+                    <span class="text-slate-400">ВСЕГО: <span id="ui-total-bet" class="text-white text-sm ml-1">180</span></span>
+                    <span id="status-text" class="text-right text-slate-300">Готов к игре!</span>
                 </div>
 
                 <div class="flex gap-3 h-16 pb-1">
@@ -211,7 +251,7 @@
                     </button>
                     
                     <button id="btn-spin" onclick="game.spin()" class="flex-1 rounded-2xl spin-btn text-2xl font-black tracking-[0.2em] text-white text-shadow-sm border-b border-white/20 relative overflow-hidden group">
-                        <span class="relative z-10">SPIN</span>
+                        <span class="relative z-10" id="spin-text">SPIN</span>
                         <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500"></div>
                     </button>
                 </div>
@@ -219,444 +259,642 @@
         </div>
 
         <div class="w-full glass-panel p-4 rounded-2xl">
-            <h3 class="text-center text-xs font-bold text-slate-400 uppercase mb-3 tracking-widest">Таблица выплат</h3>
-            <div class="grid grid-cols-4 gap-2" id="legend-grid"></div>
+            <h3 class="text-center text-xs font-bold text-slate-400 uppercase mb-3 tracking-widest">Таблица (за 5 символов)</h3>
+            <div class="grid grid-cols-4 md:grid-cols-8 gap-2" id="legend-grid"></div>
+            <p class="text-[10px] text-center text-slate-500 mt-2">3 символа = 20% | 4 символа = 50% | 5 символов = 100%</p>
         </div>
 
     </div>
 
+    <!-- Win Modal (Regular) -->
     <div id="win-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center modal-backdrop bg-black/80 backdrop-blur-sm" onclick="this.classList.add('hidden')">
         <div class="text-center transform transition-all scale-110">
-            <h2 class="text-5xl font-black text-yellow-400 drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)] mb-2 animate-bounce">BIG WIN!</h2>
+            <h2 class="text-5xl font-black text-yellow-400 drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)] mb-2 animate-bounce">MEGA WIN!</h2>
             <p class="text-6xl font-mono font-bold text-white drop-shadow-lg" id="modal-win-amount">0</p>
             <p class="text-sm text-slate-400 mt-8 uppercase tracking-widest">Нажми чтобы забрать</p>
         </div>
     </div>
 
+    <!-- Bonus Trigger Modal -->
+    <div id="bonus-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center modal-backdrop bg-black/90 backdrop-blur-md">
+        <div class="bonus-modal-content p-8 rounded-3xl text-center transform transition-all max-w-md w-full mx-4 relative overflow-hidden">
+            <!-- Shine effect -->
+            <div class="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30"></div>
+            
+            <div class="relative z-10">
+                <div class="text-6xl mb-4 animate-bounce">👑</div>
+                <h2 class="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-yellow-400 to-yellow-600 drop-shadow-sm mb-4 uppercase">
+                    БОНУС ИГРА!
+                </h2>
+                <p class="text-white text-lg font-bold mb-8">
+                    ВЫ ВЫИГРАЛИ <br>
+                    <span class="text-5xl text-yellow-400 font-black">15</span> <br>
+                    БЕСПЛАТНЫХ ВРАЩЕНИЙ
+                </p>
+                <button onclick="game.startBonusRound()" class="w-full py-4 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-xl text-xl font-black text-white shadow-xl hover:scale-105 active:scale-95 transition-all border-t border-white/20">
+                    ЗАПУСТИТЬ БОНУС
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        const ASSETS = [
-            { id: 8, val: '👑', img: 'stickers/8.webp', payout: 500, weight: 3 },
-            { id: 7, val: '7️⃣', img: 'stickers/7.webp', payout: 100, weight: 5 },
-            { id: 6, val: '💎', img: 'stickers/6.webp', payout: 50, weight: 10 },
-            { id: 5, val: '🔔', img: 'stickers/5.webp', payout: 25, weight: 15 },
-            { id: 4, val: '🍉', img: 'stickers/4.webp', payout: 20, weight: 20 },
-            { id: 3, val: '🍇', img: 'stickers/3.webp', payout: 15, weight: 25 },
-            { id: 2, val: '🍋', img: 'stickers/2.webp', payout: 10, weight: 30 },
-            { id: 1, val: '🍒', img: 'stickers/1.webp', payout: 5, weight: 50 }
-        ];
+            const ASSETS = [
+                { id: 8, val: '👑', img: 'stickers/8.webp', payout: 0, weight: 5 }, 
+                { id: 7, val: '7️⃣', img: 'stickers/7.webp', payout: 500, weight: 5 },
+                { id: 6, val: '💎', img: 'stickers/6.webp', payout: 200, weight: 10 },
+                { id: 5, val: '🔔', img: 'stickers/5.webp', payout: 100, weight: 15 },
+                { id: 4, val: '🍉', img: 'stickers/4.webp', payout: 50, weight: 20 },
+                { id: 3, val: '🍇', img: 'stickers/3.webp', payout: 30, weight: 25 },
+                { id: 2, val: '🍋', img: 'stickers/2.webp', payout: 20, weight: 30 },
+                { id: 1, val: '🍒', img: 'stickers/1.webp', payout: 10, weight: 50 }
+            ];
 
-        const LINES_MAP = [
-            { idx: 0, color: '#ef4444', path: [1, 1, 1] },
-            { idx: 1, color: '#f97316', path: [0, 0, 0] },
-            { idx: 2, color: '#eab308', path: [2, 2, 2] },
-            { idx: 3, color: '#22c55e', path: [0, 1, 2] },
-            { idx: 4, color: '#3b82f6', path: [2, 1, 0] },
-            { idx: 5, color: '#a855f7', path: [0, 1, 0] },
-            { idx: 6, color: '#ec4899', path: [2, 1, 2] },
-            { idx: 7, color: '#06b6d4', path: [1, 0, 1] },
-            { idx: 8, color: '#6366f1', path: [1, 2, 1] }
-        ];
+            const SCATTER_PAYOUTS = { 3: 500, 4: 2000, 5: 10000 };
 
-        const AudioSys = {
-            ctx: new (window.AudioContext || window.webkitAudioContext)(),
-            playTone(freq, type, duration, vol = 0.1) {
-                if (this.ctx.state === 'suspended') this.ctx.resume();
-                const osc = this.ctx.createOscillator();
-                const gain = this.ctx.createGain();
-                osc.type = type;
-                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-                gain.gain.setValueAtTime(vol, this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
-                osc.connect(gain);
-                gain.connect(this.ctx.destination);
-                osc.start();
-                osc.stop(this.ctx.currentTime + duration);
-            },
-            spin() { this.playTone(150, 'sawtooth', 0.1, 0.05); },
-            stop() { this.playTone(100, 'square', 0.1, 0.1); },
-            win() { [440, 554, 659, 880].forEach((f, i) => setTimeout(() => this.playTone(f, 'sine', 0.4, 0.2), i*100)); }
-        };
+            const LINES_MAP = [
+                { idx: 0, color: '#ef4444', path: [1, 1, 1, 1, 1] }, 
+                { idx: 1, color: '#f97316', path: [0, 0, 0, 0, 0] }, 
+                { idx: 2, color: '#eab308', path: [2, 2, 2, 2, 2] }, 
+                { idx: 3, color: '#22c55e', path: [0, 1, 2, 1, 0] }, 
+                { idx: 4, color: '#3b82f6', path: [2, 1, 0, 1, 2] }, 
+                { idx: 5, color: '#a855f7', path: [0, 0, 1, 2, 2] }, 
+                { idx: 6, color: '#ec4899', path: [2, 2, 1, 0, 0] }, 
+                { idx: 7, color: '#06b6d4', path: [1, 0, 0, 0, 1] }, 
+                { idx: 8, color: '#6366f1', path: [1, 2, 2, 2, 1] }  
+            ];
 
-        class Reel {
-            constructor(el, index) {
-                this.el = el;
-                this.index = index;
-                this.symbols = [];
-                this.SYMBOL_HEIGHT = 120; 
-            }
+            const AudioSys = {
+                ctx: new (window.AudioContext || window.webkitAudioContext)(),
+                playTone(freq, type, duration, vol = 0.1) {
+                    if (this.ctx.state === 'suspended') this.ctx.resume();
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                },
+                spin() { this.playTone(150, 'sawtooth', 0.1, 0.05); },
+                stop() { this.playTone(100, 'square', 0.1, 0.1); },
+                win() { [440, 554, 659, 880, 1100].forEach((f, i) => setTimeout(() => this.playTone(f, 'sine', 0.5, 0.2), i*100)); },
+                scatter() { [800, 1200].forEach((f, i) => setTimeout(() => this.playTone(f, 'triangle', 0.2, 0.3), i*150)); },
+                bonusStart() { 
+                    // Фанфары
+                    [392, 523, 659, 784, 523, 659, 784, 1046].forEach((f, i) => setTimeout(() => this.playTone(f, 'sawtooth', 0.3, 0.2), i*120));
+                }
+            };
 
-            init() {
-                this.el.innerHTML = '';
-                this.renderStrip(this.generateRandomSet(3)); 
-            }
+            class Reel {
+                constructor(el, index) {
+                    this.el = el;
+                    this.index = index;
+                    this.symbols = [];
+                    this.SYMBOL_HEIGHT = 100; 
+                }
 
-            generateRandomSet(count, boostedIds = []) {
-                let arr = [];
-                
-                // 1. Создаем временный массив ассетов с пересчитанными весами
-                const tempAssets = ASSETS.map(asset => {
-                    let newWeight = asset.weight;
-                    // Если ID есть в списке "буста", добавляем +30 к весу (очень сильно повышает шанс)
-                    if (boostedIds.includes(asset.id)) {
-                        newWeight += 30; 
+                init() {
+                    this.el.innerHTML = '';
+                    this.renderStrip(this.generateRandomSet(3)); 
+                }
+
+                // boostVal - насколько увеличиваем вес (30 обычно, 60 в бонусе)
+                generateRandomSet(count, boostedIds = [], boostVal = 30) {
+                    let arr = [];
+                    let currentAssets = ASSETS.map(a => ({...a}));
+
+                    currentAssets = currentAssets.map(asset => {
+                        let newWeight = asset.weight;
+                        if (boostedIds.includes(asset.id) && asset.id !== 8) newWeight += boostVal;
+                        return { ...asset, weight: newWeight };
+                    });
+
+                    for(let i=0; i<count; i++) {
+                        currentAssets.sort((a, b) => b.weight - a.weight);
+                        const totalWeight = currentAssets.reduce((acc, cur) => acc + (cur.weight / 1.5), 0);
+
+                        const rand = Math.random() * totalWeight;
+                        let sum = 0;
+                        let selected = null;
+                        for(let s of currentAssets) {
+                            sum += (s.weight / 1.5);
+                            if(rand <= sum) { selected = s; break; }
+                        }
+                        if (!selected) selected = currentAssets[currentAssets.length - 1];
+
+                        if (selected.id === 8) {
+                            currentAssets = currentAssets.filter(a => a.id !== 8);
+                        }
+
+                        arr.push(ASSETS.find(a => a.id === selected.id));
                     }
-                    // Возвращаем копию объекта с новым весом
-                    return { ...asset, weight: newWeight };
-                });
+                    return arr;
+                }
 
-                // 2. Сортируем для корректной работы алгоритма (от редких к частым или наоборот, здесь по весу)
-                tempAssets.sort((a, b) => b.weight - a.weight);
+                renderStrip(symbolDataArray) {
+                    this.el.innerHTML = '';
+                    symbolDataArray.forEach(s => {
+                        const div = document.createElement('div');
+                        div.className = 'slot-symbol';
+                        div.innerHTML = `
+                            <img src="${s.img}" 
+                                onerror="this.style.display='none'; this.parentNode.innerText='${s.val}'"
+                            >`;
+                        this.el.appendChild(div);
+                    });
+                    this.symbols = symbolDataArray;
+                }
 
-                // 3. Считаем общую сумму весов (она теперь больше 100 из-за буста)
-                // Делитель 1.5 из оригинала оставляем для сохранения динамики, но применяем ко всем
-                const totalWeight = tempAssets.reduce((acc, cur) => acc + (cur.weight / 1.5), 0);
+                async spin(finalSymbols, duration, extraSymbols) {
+                    const currentVisible = this.symbols.slice(0, 3);
+                    
+                    // ВАЖНО: Тут для "заполнителя" используем обычную генерацию
+                    const filler = this.generateRandomSet(extraSymbols);
+                    const fullStrip = [...finalSymbols, ...filler, ...currentVisible];
+                    
+                    this.renderStrip(fullStrip);
+                    const startY = -((fullStrip.length - 3) * this.SYMBOL_HEIGHT);
+                    
+                    this.el.style.transition = 'none';
+                    this.el.style.transform = `translateY(${startY}px)`;
+                    this.el.offsetHeight; 
 
-                for(let i=0; i<count; i++) {
-                    const rand = Math.random() * totalWeight;
-                    let sum = 0;
-                    let selected = null;
+                    const easing = duration > 4000 ? 'cubic-bezier(0.1, 0, 0.3, 1)' : 'cubic-bezier(0.1, 0, 0.3, 1)';
 
-                    for(let s of tempAssets) {
-                        sum += (s.weight / 1.5);
-                        if(rand <= sum) { 
-                            selected = s; 
-                            break; 
+                    this.el.style.transition = `transform ${duration}ms ${easing}`;
+                    this.el.style.transform = `translateY(0px)`;
+
+                    return new Promise(resolve => {
+                        setTimeout(() => {
+                            AudioSys.stop();
+                            resolve();
+                        }, duration);
+                    });
+                }
+            }
+
+            class SlotMachine {
+                constructor() {
+                    this.balance = parseInt(localStorage.getItem('jigu_bal_xl')) || 2000;
+                    this.betPerLine = 20;
+                    this.lines = 9;
+                    this.isSpinning = false;
+                    this.auto = false;
+                    
+                    // BONUS SYSTEM
+                    this.freeSpins = 0;
+                    this.isBonusMode = false;
+                    
+                    this.previewTimeout = null;
+                    this.winCycleTimeout = null;
+                    this.winCycleInterval = null;
+                    
+                    this.ui = {
+                        bal: document.getElementById('ui-balance'),
+                        win: document.getElementById('ui-win'),
+                        bet: document.getElementById('ui-bet'),
+                        total: document.getElementById('ui-total-bet'),
+                        status: document.getElementById('status-text'),
+                        btnSpin: document.getElementById('btn-spin'),
+                        btnAuto: document.getElementById('btn-auto'),
+                        spinText: document.getElementById('spin-text'),
+                        svg: document.getElementById('paylines-svg'),
+                        modal: document.getElementById('win-modal'),
+                        modalAmt: document.getElementById('modal-win-amount'),
+                        legend: document.getElementById('legend-grid'),
+                        
+                        // New Bonus UI
+                        bonusModal: document.getElementById('bonus-modal'),
+                        bonusStrip: document.getElementById('bonus-strip'),
+                        fsCounter: document.getElementById('fs-counter'),
+                        body: document.body,
+                        gameWrapper: document.getElementById('game-wrapper')
+                    };
+
+                    this.reels = [];
+                    this.setupReels();
+                    this.renderLegend();
+                    this.updateUI();
+                    this.updateLineButtons();
+                }
+
+                setupReels() {
+                    const container = document.getElementById('slot-machine');
+                    for(let i=0; i<5; i++) {
+                        const col = document.createElement('div');
+                        col.className = 'reel-col';
+                        container.appendChild(col);
+                        const reel = new Reel(col, i);
+                        reel.init();
+                        this.reels.push(reel);
+                    }
+                }
+
+                renderLegend() {
+                    this.ui.legend.innerHTML = '';
+                    const scatterInfo = document.createElement('div');
+                    scatterInfo.className = 'col-span-4 md:col-span-8 bg-yellow-500/20 rounded p-1 mb-2 text-center text-[10px] font-bold text-yellow-300 border border-yellow-500/30';
+                    scatterInfo.innerHTML = `👑 SCATTER: 3x = БОНУС (15 SPINS)`;
+                    this.ui.legend.appendChild(scatterInfo);
+
+                    ASSETS.forEach(item => {
+                        if(item.id === 8) return; 
+                        const el = document.createElement('div');
+                        el.className = 'bg-slate-800/50 rounded p-1 flex flex-col items-center justify-center border border-white/5';
+                        el.innerHTML = `
+                            <div class="w-6 h-6 mb-1 flex items-center justify-center">
+                                <img src="${item.img}" onerror="this.style.display='none'; this.parentNode.innerText='${item.val}'" class="w-full h-full object-contain drop-shadow">
+                            </div>
+                            <span class="text-[10px] font-bold text-yellow-400">x${item.payout}</span>
+                        `;
+                        this.ui.legend.appendChild(el);
+                    });
+                }
+
+                stopWinAnimation() {
+                    if (this.winCycleTimeout) clearTimeout(this.winCycleTimeout);
+                    if (this.winCycleInterval) clearInterval(this.winCycleInterval);
+                    this.ui.svg.innerHTML = ''; 
+                }
+
+                resetBalance() {
+                    if(this.isBonusMode) return; // Нельзя пополнять во время бонуса
+                    if(this.balance < 100) {
+                        if(confirm("Пополнить баланс до 2000?")) {
+                            this.balance = 2000;
+                            this.updateUI();
+                            AudioSys.playTone(800, 'sine', 0.1);
                         }
                     }
-                    
-                    // Если вдруг проскочили (из-за округления), берем самый частый (последний в оригинале был cherry)
-                    // Но так как мы сортировали по весу (b - a), самый частый теперь первый. 
-                    // Чтобы не ломать логику оригинала, вернем asset с тем же ID из оригинала.
-                    if (!selected) selected = tempAssets[tempAssets.length - 1];
-                    
-                    // Важно: возвращаем оригинальный объект из ASSETS, чтобы не плодить клоны
-                    const originalAsset = ASSETS.find(a => a.id === selected.id);
-                    arr.push(originalAsset);
                 }
-                return arr;
-            }
 
-            renderStrip(symbolDataArray) {
-                this.el.innerHTML = '';
-                symbolDataArray.forEach(s => {
-                    const div = document.createElement('div');
-                    div.className = 'slot-symbol';
-                    div.innerHTML = `<img src="${s.img}" onerror="this.style.display='none'; this.parentNode.innerText='${s.val}'" alt="${s.val}">`;
-                    this.el.appendChild(div);
-                });
-                this.symbols = symbolDataArray;
-            }
-
-            // ИСПРАВЛЕНО: добавлен параметр extraSymbols (по умолчанию 3)
-            async spin(finalSymbols, duration, extraSymbols) {
-                const currentVisible = this.symbols.slice(0, 3);
-                // Используем переданное количество символов (3 или 30)
-                const filler = this.generateRandomSet(extraSymbols);
-                const fullStrip = [...finalSymbols, ...filler, ...currentVisible];
-                
-                this.renderStrip(fullStrip);
-                
-                const startY = -((fullStrip.length - 3) * this.SYMBOL_HEIGHT);
-                
-                this.el.style.transition = 'none';
-                this.el.style.transform = `translateY(${startY}px)`;
-                this.el.offsetHeight; 
-
-                this.el.style.transition = `transform ${duration}ms cubic-bezier(0.5, 0, 0.3, 1.2)`;
-                this.el.style.transform = `translateY(0px)`;
-
-                return new Promise(resolve => {
-                    setTimeout(() => {
-                        AudioSys.stop();
-                        resolve();
-                    }, duration);
-                });
-            }
-        }
-
-        class SlotMachine {
-            constructor() {
-                this.balance = parseInt(localStorage.getItem('jigu_bal')) || 1000;
-                this.betPerLine = 20;
-                this.lines = 5;
-                this.isSpinning = false;
-                this.auto = false;
-                this.previewTimeout = null;
-                
-                this.ui = {
-                    bal: document.getElementById('ui-balance'),
-                    win: document.getElementById('ui-win'),
-                    bet: document.getElementById('ui-bet'),
-                    total: document.getElementById('ui-total-bet'),
-                    status: document.getElementById('status-text'),
-                    btnSpin: document.getElementById('btn-spin'),
-                    btnAuto: document.getElementById('btn-auto'),
-                    svg: document.getElementById('paylines-svg'),
-                    modal: document.getElementById('win-modal'),
-                    modalAmt: document.getElementById('modal-win-amount'),
-                    legend: document.getElementById('legend-grid')
-                };
-
-                this.reels = [];
-                this.setupReels();
-                this.renderLegend();
-                this.updateUI();
-                this.updateLineButtons();
-            }
-
-            setupReels() {
-                const container = document.getElementById('slot-machine');
-                for(let i=0; i<3; i++) {
-                    const col = document.createElement('div');
-                    col.className = 'reel-col';
-                    container.appendChild(col);
-                    const reel = new Reel(col, i);
-                    reel.init();
-                    this.reels.push(reel);
-                }
-            }
-
-            renderLegend() {
-                this.ui.legend.innerHTML = '';
-                ASSETS.forEach(item => {
-                    const el = document.createElement('div');
-                    el.className = 'bg-slate-800/50 rounded p-2 flex flex-col items-center justify-center border border-white/5';
-                    el.innerHTML = `
-                        <div class="w-8 h-8 mb-1 flex items-center justify-center">
-                            <img src="${item.img}" onerror="this.style.display='none'; this.parentNode.innerText='${item.val}'" class="w-full h-full object-contain drop-shadow">
-                        </div>
-                        <span class="text-xs font-bold text-yellow-400">x${item.payout}</span>
-                    `;
-                    this.ui.legend.appendChild(el);
-                });
-            }
-
-            resetBalance() {
-                if(this.balance < 100) {
-                    if(confirm("Пополнить баланс до 1000?")) {
-                        this.balance = 1000;
+                adjustBet(delta) {
+                    if(this.isSpinning || this.isBonusMode) return; // Блокировка
+                    const newBet = this.betPerLine + delta;
+                    if(newBet >= 10 && newBet <= 500) {
+                        this.betPerLine = newBet;
                         this.updateUI();
-                        AudioSys.playTone(800, 'sine', 0.1);
+                        AudioSys.playTone(600, 'sine', 0.05);
                     }
-                } else {
-                    alert("Баланс можно пополнить, когда он опустится ниже 100.");
                 }
-            }
 
-            adjustBet(delta) {
-                if(this.isSpinning) return;
-                const newBet = this.betPerLine + delta;
-                if(newBet >= 10 && newBet <= 500) {
-                    this.betPerLine = newBet;
+                setLines(n) {
+                    if(this.isSpinning || this.isBonusMode) return; // Блокировка
+                    this.stopWinAnimation();
+                    this.lines = n;
                     this.updateUI();
+                    this.updateLineButtons();
+                    this.drawLinesPreview();
                     AudioSys.playTone(600, 'sine', 0.05);
                 }
-            }
 
-            setLines(n) {
-                if(this.isSpinning) return;
-                this.lines = n;
-                this.updateUI();
-                this.updateLineButtons();
-                this.drawLinesPreview();
-                AudioSys.playTone(600, 'sine', 0.05);
-            }
-
-            updateLineButtons() {
-                const btns = document.querySelectorAll('#lines-control-panel button');
-                btns.forEach(btn => {
-                    const val = parseInt(btn.innerText);
-                    if (val === this.lines) btn.classList.add('active');
-                    else btn.classList.remove('active');
-                });
-            }
-
-            toggleAuto() {
-                this.auto = !this.auto;
-                this.ui.btnAuto.classList.toggle('active-auto', this.auto);
-                if(this.auto && !this.isSpinning) this.spin();
-            }
-
-            getTotalBet() { return this.betPerLine * this.lines; }
-
-            updateUI() {
-                this.ui.bal.innerText = this.balance;
-                this.ui.bet.innerText = this.betPerLine;
-                this.ui.total.innerText = this.getTotalBet();
-                localStorage.setItem('jigu_bal', this.balance);
-                
-                if(this.balance < this.getTotalBet()) {
-                    this.ui.total.classList.add('text-red-500');
-                    this.ui.status.innerHTML = "<span class='text-red-400'>Не хватает средств</span>";
-                } else {
-                    this.ui.total.classList.remove('text-red-500');
-                    this.ui.status.innerText = this.isSpinning ? "Крутим..." : "Удачи!";
-                }
-            }
-
-            drawLinesPreview() {
-                if (this.previewTimeout) clearTimeout(this.previewTimeout);
-                this.ui.svg.innerHTML = '';
-                for(let i=0; i<this.lines; i++) { this.drawLine(i); }
-                this.previewTimeout = setTimeout(() => {
-                    if (!this.isSpinning) this.ui.svg.innerHTML = '';
-                }, 2000);
-            }
-
-            drawLine(lineIdx) {
-                if(!LINES_MAP[lineIdx]) return;
-                const cfg = LINES_MAP[lineIdx];
-                const path = cfg.path; 
-                const getCoord = (c, r) => `${(c*33.33)+16.66} ${(r*33.33)+16.66}`;
-                const d = `M ${getCoord(0, path[0])} L ${getCoord(1, path[1])} L ${getCoord(2, path[2])}`;
-                const el = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                el.setAttribute("d", d);
-                el.setAttribute("stroke", cfg.color);
-                el.setAttribute("class", "payline-path");
-                this.ui.svg.appendChild(el);
-            }
-
-            getResults() {
-                let grid = [];
-                
-                // 1. Генерируем первый барабан (без бустов, стандартный рандом)
-                grid[0] = this.reels[0].generateRandomSet(3);
-
-                // 2. Собираем ID символов, выпавших на 1 барабане
-                const idsFromReel1 = grid[0].map(s => s.id);
-                // Генерируем второй барабан, передавая эти ID для буста
-                grid[1] = this.reels[1].generateRandomSet(3, idsFromReel1);
-
-                // 3. Собираем ID символов, выпавших на 2 барабане
-                // Логика: символ со 2 барабана имеет шанс "перетечь" на 3
-                const idsFromReel2 = grid[1].map(s => s.id);
-                // Генерируем третий барабан с бустом от второго
-                grid[2] = this.reels[2].generateRandomSet(3, idsFromReel2);
-
-                return grid;
-            }
-
-            async spin() {
-                const cost = this.getTotalBet();
-                if(this.isSpinning || this.balance < cost) {
-                    if(this.auto && this.balance < cost) this.toggleAuto();
-                    return;
-                }
-
-                this.isSpinning = true;
-                this.balance -= cost;
-                this.ui.win.innerText = "0";
-                this.ui.svg.innerHTML = '';
-                if(this.previewTimeout) clearTimeout(this.previewTimeout);
-                
-                this.ui.btnSpin.disabled = true;
-                
-                document.querySelectorAll('.win-pulse').forEach(el => el.classList.remove('win-pulse'));
-                this.updateUI();
-                
-                const resultGrid = this.getResults(); 
-
-                // --- ANTICIPATION LOGIC ---
-                let anticipate = false;
-                for(let lineIdx=0; lineIdx < this.lines; lineIdx++) {
-                    const path = LINES_MAP[lineIdx].path;
-                    // Корона - это ID 8
-                    if(resultGrid[0][path[0]].id === 8 && resultGrid[1][path[1]].id === 8) {
-                        anticipate = true;
-                        break;
-                    }
-                }
-
-                const promises = this.reels.map((reel, i) => {
-                    const delay = i * 200; 
-                    let duration = 1000;
-                    // Стандартное кол-во символов
-                    let extraSymbols = 2; 
-
-                    // Если 3-й барабан и есть ожидание короны
-                    if(i === 2 && anticipate) {
-                        duration += 4000; // Долго
-                        extraSymbols = 20; // Много символов для скорости
-                    }
-
-                    return new Promise(r => setTimeout(() => {
-                        AudioSys.spin();
-                        reel.spin(resultGrid[i], duration, extraSymbols).then(r);
-                    }, delay));
-                });
-
-                await Promise.all(promises);
-
-                this.checkWin(resultGrid);
-                
-                this.isSpinning = false;
-                this.ui.btnSpin.disabled = false;
-                this.updateUI();
-
-                if(this.auto) setTimeout(() => this.spin(), 100);
-            }
-
-            checkWin(grid) {
-                let totalWin = 0;
-                let winLinesIndices = [];
-
-                for(let i=0; i<this.lines; i++) {
-                    const lineCfg = LINES_MAP[i];
-                    if(!lineCfg) continue;
-                    const p = lineCfg.path; 
-                    
-                    const s1 = grid[0][p[0]];
-                    const s2 = grid[1][p[1]];
-                    const s3 = grid[2][p[2]];
-
-                    if(s1.id === s2.id && s2.id === s3.id) {
-                        const pay = this.betPerLine * s1.payout;
-                        totalWin += pay;
-                        winLinesIndices.push(i);
+                updateLineButtons() {
+                    const btns = document.querySelectorAll('#lines-control-panel button');
+                    btns.forEach(btn => {
+                        const val = parseInt(btn.innerText);
+                        if (val === this.lines) btn.classList.add('active');
+                        else btn.classList.remove('active');
                         
-                        this.highlightSymbol(0, p[0]);
-                        this.highlightSymbol(1, p[1]);
-                        this.highlightSymbol(2, p[2]);
+                        // Визуальная блокировка
+                        btn.disabled = this.isSpinning || this.isBonusMode;
+                    });
+                }
+
+                toggleAuto() {
+                    if(this.isBonusMode) return; // В бонусе авто всегда включено (скрыто)
+                    this.auto = !this.auto;
+                    this.ui.btnAuto.classList.toggle('active-auto', this.auto);
+                    if(this.auto && !this.isSpinning) this.spin();
+                }
+
+                getTotalBet() { return this.betPerLine * this.lines; }
+
+                updateUI() {
+                    this.ui.bal.innerText = this.balance;
+                    this.ui.bet.innerText = this.betPerLine;
+                    this.ui.total.innerText = this.getTotalBet();
+                    localStorage.setItem('jigu_bal_xl', this.balance);
+                    
+                    // Блокировка контролов ставок
+                    const betBtns = document.querySelectorAll('.bet-ctrl');
+                    betBtns.forEach(b => b.disabled = this.isSpinning || this.isBonusMode);
+                    this.ui.btnAuto.disabled = this.isBonusMode;
+
+                    if (this.isBonusMode) {
+                        this.ui.body.classList.add('bonus-active');
+                        this.ui.bonusStrip.classList.remove('hidden');
+                        this.ui.fsCounter.innerText = this.freeSpins;
+                        this.ui.status.innerHTML = "<span class='text-yellow-400 animate-pulse'>БОНУС ИГРА!</span>";
+                        this.ui.spinText.innerText = `FREE ${this.freeSpins}`;
+                        this.ui.btnSpin.disabled = true; // Кнопка спина недоступна, идет авто
+                    } else {
+                        this.ui.body.classList.remove('bonus-active');
+                        this.ui.bonusStrip.classList.add('hidden');
+                        this.ui.spinText.innerText = "SPIN";
+                        
+                        if(this.balance < this.getTotalBet()) {
+                            this.ui.total.classList.add('text-red-500');
+                            this.ui.status.innerHTML = "<span class='text-red-400'>Нет средств</span>";
+                        } else {
+                            this.ui.total.classList.remove('text-red-500');
+                            this.ui.status.innerText = this.isSpinning ? "Удачи..." : "Вращай!";
+                        }
                     }
                 }
 
-                if(totalWin > 0) {
-                    this.balance += totalWin;
-                    this.ui.win.innerText = totalWin;
-                    this.ui.status.innerHTML = `<span class="text-yellow-400 font-bold animate-pulse">ВЫИГРЫШ: ${totalWin}!</span>`;
+                drawLinesPreview() {
+                    this.stopWinAnimation();
+                    if (this.previewTimeout) clearTimeout(this.previewTimeout);
+                    for(let i=0; i<this.lines; i++) { this.drawLine(i); }
+                    this.previewTimeout = setTimeout(() => {
+                        if (!this.isSpinning) this.ui.svg.innerHTML = '';
+                    }, 2000);
+                }
+
+                drawLine(lineIdx) {
+                    if(!LINES_MAP[lineIdx]) return;
+                    const cfg = LINES_MAP[lineIdx];
+                    const path = cfg.path;
+                    const getCoord = (c, r) => `${(c * 20) + 10} ${(r * 33.33) + 16.66}`;
+                    let d = `M ${getCoord(0, path[0])}`;
+                    for(let i=1; i<5; i++) { d += ` L ${getCoord(i, path[i])}`; }
+                    const el = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    el.setAttribute("d", d);
+                    el.setAttribute("stroke", cfg.color);
+                    el.setAttribute("class", "payline-path");
+                    this.ui.svg.appendChild(el);
+                }
+
+                // Изменено: теперь передаем boostVal в генератор
+                getResults() {
+                    let grid = [];
+                    // В бонусе буст 60, в обычной 30
+                    const boostVal = this.isBonusMode ? 60 : 30; 
+                    
+                    grid[0] = this.reels[0].generateRandomSet(3);
+                    for(let i=1; i<5; i++) {
+                        const prevIds = grid[i-1].map(s => s.id);
+                        // Передаем boostVal
+                        grid[i] = this.reels[i].generateRandomSet(3, prevIds, boostVal);
+                    }
+                    return grid;
+                }
+
+                startBonusRound() {
+                    this.ui.bonusModal.classList.add('hidden');
+                    this.isBonusMode = true;
+                    this.freeSpins = 15;
+                    this.auto = false; // Выключаем обычное авто
+                    this.ui.btnAuto.classList.remove('active-auto');
+                    
+                    this.updateUI();
+                    AudioSys.bonusStart();
+                    
+                    // Запуск первого бесплатного спина
+                    setTimeout(() => this.spin(), 1000);
+                }
+
+                endBonusRound() {
+                    this.isBonusMode = false;
+                    this.updateUI();
+                    this.showFloatingText("BONUS COMPLETE");
                     AudioSys.win();
-                    winLinesIndices.forEach(idx => this.drawLine(idx));
-                    this.showFloatingText(`+${totalWin}`);
-                    if(totalWin >= this.getTotalBet() * 10) this.celebrateBigWin(totalWin);
+                }
+
+                async spin() {
+                    const cost = this.getTotalBet();
+                    
+                    // Проверка возможности спина
+                    // Если бонус - баланс не важен. Если обычная - нужен баланс.
+                    if(this.isSpinning) return;
+                    if(!this.isBonusMode && this.balance < cost) {
+                        if(this.auto) this.toggleAuto();
+                        return;
+                    }
+
+                    this.stopWinAnimation();
+                    this.isSpinning = true;
+
+                    // Списание денег (только если не бонус)
+                    if (!this.isBonusMode) {
+                        this.balance -= cost;
+                        this.ui.win.innerText = "0";
+                    } else {
+                        // В бонусе уменьшаем счетчик
+                        this.freeSpins--;
+                        if(this.freeSpins < 0) this.freeSpins = 0;
+                    }
+
+                    this.ui.btnSpin.disabled = true;
+                    document.querySelectorAll('.win-pulse').forEach(el => el.classList.remove('win-pulse'));
+                    this.updateUI();
+                    
+                    const resultGrid = this.getResults(); 
+
+                    let crownsPerReel = resultGrid.map(col => col.some(s => s.id === 8) ? 1 : 0);
+                    
+                    const promises = this.reels.map((reel, i) => {
+                        const delay = i; 
+                        let duration = 800 + (i * 200);
+                        let extraSymbols = 6 + i;
+
+                        // 1. Находим индексы всех барабанов с коронами СЛЕВА от текущего (i)
+                        let previousCrownIndices = [];
+                        for(let k=0; k < i; k++) {
+                            if(crownsPerReel[k] === 1) previousCrownIndices.push(k);
+                        }
+
+                        // 2. Если слева уже есть 2 или больше короны
+                        if(previousCrownIndices.length >= 2) {
+                            // Берем индекс барабана, где выпала именно ВТОРАЯ корона
+                            const secondCrownIndex = previousCrownIndices[1];
+                            
+                            // Считаем множитель на основе позиции второй короны
+                            // Если вторая корона на 2-м барабане, то 3-й (i=3) получит: 3 - 2 - 1 = 0
+                            const multiplier = i - secondCrownIndex - 1;
+
+                            // Применяем
+                            duration += 2000 + (multiplier * 2000); 
+                            extraSymbols = 15 + (multiplier * 15); 
+                        }
+
+                        return new Promise(r => setTimeout(() => {
+                            AudioSys.spin();
+                            if(crownsPerReel[i] === 1) {
+                                // Звук скаттера чуть раньше конца вращения
+                                setTimeout(() => AudioSys.scatter(), duration - 300);
+                            }
+                            reel.spin(resultGrid[i], duration, extraSymbols).then(r);
+                        }, delay));
+                    });
+
+                    await Promise.all(promises);
+
+                    this.checkWin(resultGrid);
+                    
+                    this.isSpinning = false;
+                    this.ui.btnSpin.disabled = false;
+                    this.updateUI();
+
+                    // Логика повторного вращения
+                    if (this.isBonusMode) {
+                        if (this.freeSpins > 0) {
+                            // Задержка 2000мс для бонуса
+                            setTimeout(() => this.spin(), 1000);
+                        } else {
+                            setTimeout(() => this.endBonusRound(), 1000);
+                        }
+                    } else {
+                        // Обычный авто-спин (300мс)
+                        if(this.auto) setTimeout(() => this.spin(), 300);
+                    }
+                }
+
+                cycleWinLines(indices) {
+                    if (indices.length === 0) return;
+                    if (indices.length === 1) {
+                        this.ui.svg.innerHTML = '';
+                        this.drawLine(indices[0]);
+                        return;
+                    }
+                    let currentIndex = 0;
+                    const showNext = () => {
+                        this.ui.svg.innerHTML = ''; 
+                        this.drawLine(indices[currentIndex]); 
+                        currentIndex = (currentIndex + 1) % indices.length;
+                    };
+                    showNext();
+                    this.winCycleInterval = setInterval(showNext, 1000);
+                }
+
+                checkWin(grid) {
+                    let totalWin = 0;
+                    let winLinesIndices = [];
+
+                    // 1. Lines
+                    for(let i=0; i<this.lines; i++) {
+                        const lineCfg = LINES_MAP[i];
+                        if(!lineCfg) continue;
+                        const p = lineCfg.path; 
+                        
+                        const lineSymbols = [
+                            grid[0][p[0]], grid[1][p[1]], grid[2][p[2]], grid[3][p[3]], grid[4][p[4]]
+                        ];
+
+                        const firstSymbolId = lineSymbols[0].id;
+                        if(firstSymbolId === 8) continue;
+
+                        let matchCount = 1;
+                        for(let k=1; k<5; k++) {
+                            if(lineSymbols[k].id === firstSymbolId) matchCount++;
+                            else break;
+                        }
+
+                        if(matchCount >= 3) {
+                            const basePayout = this.betPerLine * lineSymbols[0].payout;
+                            let multiplier = matchCount === 3 ? 0.2 : (matchCount === 4 ? 0.5 : 1.0);
+                            const winAmount = Math.floor(basePayout * multiplier);
+                            
+                            totalWin += winAmount;
+                            winLinesIndices.push(i);
+                            for(let k=0; k<matchCount; k++) { this.highlightSymbol(k, p[k]); }
+                        }
+                    }
+
+                    // 2. Scatters (Crowns)
+                    let scatterCount = 0;
+                    let scatterPositions = [];
+
+                    grid.forEach((col, colIdx) => {
+                        col.forEach((s, rowIdx) => {
+                            if(s.id === 8) {
+                                scatterCount++;
+                                scatterPositions.push({c: colIdx, r: rowIdx});
+                            }
+                        });
+                    });
+
+                    if(scatterCount >= 3) {
+                        const scatterWin = SCATTER_PAYOUTS[scatterCount] || 0;
+                        totalWin += scatterWin;
+                        scatterPositions.forEach(pos => this.highlightSymbol(pos.c, pos.r));
+                        
+                        // BONUS TRIGGER LOGIC
+                        if (this.isBonusMode) {
+                            // RETRIGGER (Если уже в бонусе - просто добавляем спины)
+                            this.freeSpins += 15;
+                            this.showFloatingText("+15 FREE SPINS!");
+                            AudioSys.bonusStart();
+                            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#fbbf24'] });
+                        } else {
+                            // START NEW BONUS (Если обычная игра)
+                            
+                            // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+                            this.auto = false; // Принудительно выключаем авто
+                            this.ui.btnAuto.classList.remove('active-auto'); // Убираем подсветку кнопки
+                            // -------------------------
+
+                            setTimeout(() => {
+                                this.ui.bonusModal.classList.remove('hidden');
+                                AudioSys.bonusStart();
+                                confetti({ particleCount: 300, spread: 120, origin: { y: 0.6 }, colors: ['#fbbf24', '#818cf8'] });
+                            }, 500);
+                        }
+                    }
+
+                    if(totalWin > 0) {
+                        this.balance += totalWin;
+                        this.ui.win.innerText = totalWin; 
+                        
+                        if(!this.isBonusMode) {
+                             this.ui.status.innerHTML = `<span class="text-yellow-400 font-bold animate-pulse">ВЫИГРЫШ: ${totalWin}!</span>`;
+                        }
+                        
+                        AudioSys.win();
+                        
+                        if (winLinesIndices.length > 0) {
+                            this.ui.svg.innerHTML = '';
+                            winLinesIndices.forEach(idx => this.drawLine(idx));
+                            if (winLinesIndices.length > 1) {
+                                this.winCycleTimeout = setTimeout(() => {
+                                    this.cycleWinLines(winLinesIndices);
+                                }, 1000);
+                            }
+                        }
+
+                        this.showFloatingText(`+${totalWin}`);
+                        if(totalWin >= this.getTotalBet() * 20) this.celebrateBigWin(totalWin);
+                    }
+                }
+
+                highlightSymbol(colIdx, rowIdx) {
+                    const col = this.reels[colIdx].el;
+                    const symbols = col.children;
+                    if(symbols[rowIdx]) symbols[rowIdx].classList.add('win-pulse');
+                }
+
+                showFloatingText(txt) {
+                    const el = document.createElement('div');
+                    el.className = 'float-text';
+                    el.innerText = txt;
+                    document.getElementById('game-wrapper').appendChild(el);
+                    setTimeout(() => el.remove(), 1500);
+                }
+
+                celebrateBigWin(amount) {
+                    confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 }, colors: ['#fbbf24', '#ef4444', '#3b82f6', '#d946ef'] });
+                    if(!this.isBonusMode) { // В бонусе не прерываем модалкой big win, чтобы не тормозить процесс
+                        this.ui.modalAmt.innerText = amount;
+                        this.ui.modal.classList.remove('hidden');
+                    }
                 }
             }
 
-            highlightSymbol(colIdx, rowIdx) {
-                const col = this.reels[colIdx].el;
-                const symbols = col.children;
-                if(symbols[rowIdx]) symbols[rowIdx].classList.add('win-pulse');
-            }
-
-            showFloatingText(txt) {
-                const el = document.createElement('div');
-                el.className = 'float-text';
-                el.innerText = txt;
-                document.getElementById('game-wrapper').appendChild(el);
-                setTimeout(() => el.remove(), 1500);
-            }
-
-            celebrateBigWin(amount) {
-                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#fbbf24', '#ef4444', '#3b82f6'] });
-                this.ui.modalAmt.innerText = amount;
-                this.ui.modal.classList.remove('hidden');
-            }
-        }
-
-        window.game = new SlotMachine();
+            window.game = new SlotMachine();
     </script>
 </body>
 </html>
-
-
-
-
