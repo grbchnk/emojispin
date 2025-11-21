@@ -660,6 +660,11 @@
 
                 endBonusRound() {
                     this.isBonusMode = false;
+                    
+                    // --- ИСПРАВЛЕНИЕ: Принудительно включаем кнопку ---
+                    this.ui.btnSpin.disabled = false; 
+                    // --------------------------------------------------
+
                     this.updateUI();
                     this.showFloatingText("BONUS COMPLETE");
                     AudioSys.win();
@@ -898,3 +903,4 @@
     </script>
 </body>
 </html>
+
