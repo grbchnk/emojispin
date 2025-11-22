@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JIGULUCK: Bonus Bomb Edition</title>
+    <title>JIGULUCK: Mega Multiplier Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
@@ -62,6 +62,49 @@
             line-height: 1;
             filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5));
             transition: transform 0.2s, filter 0.2s;
+        }
+
+        /* --- СТИЛИ ДЛЯ МНОЖИТЕЛЕЙ --- */
+        .mult-x2 {
+            color: #60a5fa; /* Голубой */
+            text-shadow: 0 0 10px rgba(37, 99, 235, 0.8);
+            font-weight: 900;
+            font-size: calc(var(--symbol-sz) * 0.8);
+        }
+        .mult-x3 {
+            color: #34d399; /* Зеленый */
+            text-shadow: 0 0 10px rgba(16, 185, 129, 0.8);
+            font-weight: 900;
+            font-size: calc(var(--symbol-sz) * 0.85);
+        }
+        .mult-x5 {
+            color: #ef4444; /* Красный */
+            text-shadow: 0 0 15px rgba(220, 38, 38, 0.8);
+            font-weight: 900;
+            font-size: calc(var(--symbol-sz) * 0.9);
+        }
+        .mult-x10 {
+            background: linear-gradient(to bottom, #f0abfc, #c084fc); /* Фиолетовый градиент */
+            -webkit-background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 20px rgba(192, 132, 252, 0.9);
+            font-weight: 900;
+            font-size: calc(var(--symbol-sz) * 1.0);
+        }
+        
+        /* ЭПИЧЕСКИЙ x50 */
+        @keyframes goldPulse {
+            0%, 100% { filter: drop-shadow(0 0 10px #f59e0b); transform: scale(1); }
+            50% { filter: drop-shadow(0 0 25px #fbbf24); transform: scale(1.2); }
+        }
+        .mult-x50 {
+            background: linear-gradient(to bottom, #fcd34d, #b45309, #fcd34d);
+            -webkit-background-clip: text;
+            color: transparent;
+            font-weight: 900;
+            font-size: calc(var(--symbol-sz) * 1.3);
+            animation: goldPulse 1s infinite ease-in-out;
+            z-index: 60;
         }
 
         #paylines-svg {
@@ -138,8 +181,6 @@
             70% { transform: translate(3px, 1px) rotate(-1deg); }
             80% { transform: translate(-1px, -1px) rotate(1deg); }
             90% { transform: translate(1px, 2px) rotate(0deg); }
-            /* БЫЛО: 100% { transform: translate(1px, -2px) rotate(-1deg); } */
-            /* СТАЛО (Сброс в ноль): */
             100% { transform: translate(0, 0) rotate(0deg); }
         }
 
@@ -276,12 +317,12 @@
             <div class="space-y-3">
                 <div class="grid grid-cols-2 gap-3">
                     <div class="bg-slate-800/50 rounded-xl p-2 border border-slate-700 flex items-center justify-between">
-                        <button class="bet-ctrl w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 font-bold text-lg active:scale-95 transition disabled:opacity-50" onclick="game.adjustBet(-10)">-</button>
+                        <button class="bet-ctrl w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 font-bold text-lg active:scale-95 transition disabled:opacity-50" onclick="game.adjustBet(-1)">-</button>
                         <div class="text-center">
                             <div class="text-[9px] text-slate-400 uppercase font-bold">Ставка</div>
                             <div class="font-mono font-bold text-white text-lg" id="ui-bet">20</div>
                         </div>
-                        <button class="bet-ctrl w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 font-bold text-lg active:scale-95 transition disabled:opacity-50" onclick="game.adjustBet(10)">+</button>
+                        <button class="bet-ctrl w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 font-bold text-lg active:scale-95 transition disabled:opacity-50" onclick="game.adjustBet(1)">+</button>
                     </div>
 
                     <div class="bg-slate-800/50 rounded-xl p-2 border border-slate-700 flex flex-col justify-center items-center">
@@ -338,17 +379,18 @@
 
     <script>
             const ASSETS = [
-                { id: 10, val: '🍀', payout: 250, weight: 5 }, // WILD (Вайлд)
+                { id: 10, val: '🌈', payout: 250, weight: 5 }, // WILD (Вайлд)
                 { id: 9, val: '💣', payout: 0, weight: 0 }, 
-                { id: 8, val: '💎', payout: 0, weight: 9 }, 
-                { id: 7, val: '👑', payout: 500, weight: 5 },
-                { id: 6, val: '7️⃣', payout: 200, weight: 10 },
-                { id: 5, val: '🔔', payout: 100, weight: 15 },
+                { id: 8, val: '💎', payout: 0, weight: 8 }, 
+                { id: 7, val: '👑', payout: 250, weight: 5 },
+                { id: 6, val: '🏰', payout: 100, weight: 10 },
+                { id: 5, val: '🗝️', payout: 70, weight: 15 },
                 { id: 4, val: '🍉', payout: 50, weight: 20 },
                 { id: 3, val: '🍇', payout: 30, weight: 25 },
                 { id: 2, val: '🍋', payout: 20, weight: 30 },
                 { id: 1, val: '🍒', payout: 10, weight: 50 }
             ];
+            // Множители создаются динамически (ID 11)
 
             const SCATTER_PAYOUTS = { 3: 100, 4: 1000, 5: 10000 };
 
@@ -363,6 +405,8 @@
                 { idx: 7, color: '#06b6d4', path: [1, 0, 0, 0, 1] }, 
                 { idx: 8, color: '#6366f1', path: [1, 2, 2, 2, 1] }  
             ]; 
+
+            const BET_VALUES = [1, 5, 10, 20, 50, 100, 150, 200, 500, 1000, 1500, 2000, 5000, 10000, 20000, 50000, 100000];
 
             const AudioSys = {
                 ctx: new (window.AudioContext || window.webkitAudioContext)(),
@@ -381,27 +425,19 @@
                     osc.stop(this.ctx.currentTime + duration);
                 },
 
-                // ВЕРНУЛИ СОЧНЫЙ ЗВУК СПИНА
                 spin() {
                     if (this.ctx.state === 'suspended') this.ctx.resume();
                     const now = this.ctx.currentTime;
                     const duration = 0.3; 
-
                     const osc = this.ctx.createOscillator();
                     const gain = this.ctx.createGain();
-
                     osc.type = 'triangle'; 
-
-                    // Эффект "взлета" (от 200Hz до 600Hz)
                     osc.frequency.setValueAtTime(200, now);
                     osc.frequency.exponentialRampToValueAtTime(600, now + duration);
-
                     gain.gain.setValueAtTime(0.35, now); 
                     gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-
                     osc.connect(gain);
                     gain.connect(this.ctx.destination);
-
                     osc.start(now);
                     osc.stop(now + duration);
                 },
@@ -416,7 +452,8 @@
                     this.playTone(50, 'sawtooth', 0.8, 0.5); 
                 },
                 tick() { this.playTone(800, 'square', 0.03, 0.1); },
-                selected() { this.playTone(1200, 'sine', 0.5, 0.3); }
+                selected() { this.playTone(1200, 'sine', 0.5, 0.3); },
+                multAppear() { this.playTone(1500, 'square', 0.4, 0.2); }
             };
 
             class Reel {
@@ -439,7 +476,7 @@
                     currentAssets = currentAssets.map(asset => {
                         let newWeight = asset.weight;
                         if (asset.id === 9) {
-                            newWeight = isBonusMode ? 10 : 0; 
+                            newWeight = isBonusMode ? 15 : 0; 
                         }
                         if (boostedIds.includes(asset.id) && asset.id !== 8 && asset.id !== 9 && asset.id !== 10) newWeight += boostVal;
                         return { ...asset, weight: newWeight };
@@ -467,7 +504,14 @@
                     symbolDataArray.forEach(s => {
                         const div = document.createElement('div');
                         div.className = 'slot-symbol';
-                        div.innerText = s.val; 
+                        
+                        // Рендер множителя, если он есть
+                        if (s.mul) {
+                            div.innerText = s.val;
+                            div.classList.add('mult-x' + s.mul);
+                        } else {
+                            div.innerText = s.val; 
+                        }
                         this.el.appendChild(div);
                     });
                     this.symbols = symbolDataArray;
@@ -567,23 +611,20 @@
                 renderLegend() {
                     this.ui.legend.innerHTML = '';
                     
-                    // Блок описания спец. символов
                     const scatterInfo = document.createElement('div');
                     scatterInfo.className = 'col-span-4 md:col-span-9 bg-slate-800/80 rounded p-2 mb-2 text-center text-[10px] font-bold border border-white/10 grid grid-cols-1 md:grid-cols-3 gap-2 items-center';
                     scatterInfo.innerHTML = `
-                        <div class="text-yellow-300">💎 SCATTER: 3x = BONUS</div>
-                        <div class="text-green-400">🍀 WILD: Заменяет любой символ</div>
-                        <div class="text-red-400">💣 BOMB: Берегись!</div>
+                        <div class="text-yellow-300">👽 SCATTER: 3x = BONUS</div>
+                        <div class="text-green-400">🌈 WILD: Заменяет символ</div>
+                        <div class="text-red-400">💣 BOMB: Оставляет x2, x3, x5, x10 или x50!</div>
                     `;
                     this.ui.legend.appendChild(scatterInfo);
 
                     ASSETS.forEach(item => {
-                        // Скрываем бомбу и скаттер из обычной сетки, но показываем Клевер
                         if(item.id === 8 || item.id === 9) return; 
                         
                         const el = document.createElement('div');
                         el.className = 'bg-slate-800/50 rounded p-1 flex flex-col items-center justify-center border border-white/5';
-                        // Подсветка для Вайлда
                         if(item.id === 10) el.className += ' border-green-500/50 bg-green-900/20';
                         
                         el.innerHTML = `<div class="w-8 h-8 mb-1 flex items-center justify-center text-2xl">${item.val}</div><span class="text-[10px] font-bold text-yellow-400">x${item.payout}</span>`;
@@ -611,11 +652,13 @@
                     }
                 }
 
-                adjustBet(delta) {
+                adjustBet(direction) {
                     if(this.isSpinning || this.isBonusMode) return;
-                    const newBet = this.betPerLine + delta;
-                    if(newBet >= 10 && newBet <= 500) {
-                        this.betPerLine = newBet;
+                    let currentIndex = BET_VALUES.indexOf(this.betPerLine);
+                    if (currentIndex === -1) currentIndex = 0;
+                    const nextIndex = currentIndex + (direction > 0 ? 1 : -1);
+                    if (nextIndex >= 0 && nextIndex < BET_VALUES.length) {
+                        this.betPerLine = BET_VALUES[nextIndex];
                         this.updateUI();
                         AudioSys.playTone(600, 'sine', 0.05);
                     }
@@ -623,11 +666,8 @@
 
                 closeWinModal() {
                     this.ui.modal.classList.add('hidden');
-                    
-                    // Если в очереди висит бонус - запускаем его после закрытия окна
                     if (this.queuedBonus) {
                         this.queuedBonus = false;
-                        // Небольшая задержка для плавности переключения окон
                         setTimeout(() => {
                             this.showBonusEntryModal();
                             confetti({ particleCount: 100, spread: 100, origin: { y: 0.6 }, colors: ['#fbbf24', '#818cf8'], scalar: 1.2, ticks: 200 });
@@ -700,21 +740,10 @@
 
                 triggerShake() {
                     const wrapper = document.getElementById('game-wrapper');
-                    
-                    // Сначала удаляем, если вдруг класс там завис
                     wrapper.classList.remove('shake-screen');
-                    
-                    // Магия для перезапуска анимации (reflow)
                     void wrapper.offsetWidth; 
-                    
-                    // Добавляем класс
                     wrapper.classList.add('shake-screen');
-                    
-                    // Вибрация на мобильных
                     if (navigator.vibrate) navigator.vibrate(200); 
-
-                    // ВАЖНО: Через 0.3 сек (время анимации) удаляем класс,
-                    // чтобы CSS-трансформации полностью отключились.
                     setTimeout(() => {
                         wrapper.classList.remove('shake-screen');
                     }, 300);
@@ -755,105 +784,84 @@
                 }
 
                 showBonusEntryModal() {
-                    // Создаем единую структуру сразу
                     this.ui.bonusModalInner.innerHTML = `
                         <div class="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30"></div>
-                        
                         <div class="relative z-10 flex flex-col items-center justify-center h-full w-full py-4">
                             <h2 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-yellow-400 to-yellow-600 drop-shadow-sm mb-2 uppercase">
                                 БОНУС ИГРА!
                             </h2>
-                            
                             <div class="text-white text-sm font-bold mb-4 opacity-90">
                                 ВЫ ВЫИГРАЛИ <span class="text-yellow-400 text-lg">15</span> FREE SPINS
                             </div>
-
-                            <!-- Контейнер для символа (всегда на месте) -->
                             <div class="w-32 h-32 bg-slate-900 rounded-2xl border-4 border-yellow-500 flex items-center justify-center text-6xl shadow-[0_0_50px_rgba(234,179,8,0.3)] mb-6 relative shrink-0">
                                 <div id="selection-symbol" class="text-white">❓</div>
                             </div>
-
-                            <!-- Текст статуса (фиксированная высота чтобы не прыгало) -->
                             <div class="h-8 mb-4 w-full flex justify-center items-center">
                                 <p id="selection-text" class="text-slate-300 text-xs font-bold tracking-widest uppercase">
                                     ОПРЕДЕЛИМ БОНУСНЫЙ СИМВОЛ
                                 </p>
                             </div>
-
-                            <!-- Кнопка (одна на все этапы) -->
                             <button id="bonus-action-btn" class="w-full max-w-xs py-4 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-xl text-xl font-black text-white shadow-xl hover:scale-105 active:scale-95 transition-all border-t border-white/20">
                                 КРУТИТЬ
                             </button>
                         </div>
                     `;
-                    
-                    // Вешаем событие на кнопку - запуск рулетки
                     document.getElementById('bonus-action-btn').onclick = () => this.runSymbolSelectionAnimation();
-                    
                     this.ui.bonusModal.classList.remove('hidden');
                     AudioSys.bonusStart();
                 }
 
-                // --- ИСПРАВЛЕННАЯ АНИМАЦИЯ ---
                 runSymbolSelectionAnimation() {
                     const validSymbols = ASSETS.filter(a => a.id >= 1 && a.id <= 7);
                     const symbolEl = document.getElementById('selection-symbol');
                     const textEl = document.getElementById('selection-text');
                     const btn = document.getElementById('bonus-action-btn');
 
-                    // 1. Прячем кнопку и меняем текст статуса
-                    btn.classList.add('opacity-0', 'pointer-events-none'); // Скрываем плавно
+                    btn.classList.add('opacity-0', 'pointer-events-none'); 
                     textEl.innerText = "ВЫБИРАЕМ БОЕВУЮ БОМБУ...";
                     textEl.classList.add('animate-pulse', 'text-yellow-400');
 
                     let delay = 50; 
                     let prevSymbolId = -1;
 
-                    // Функция вращения
+                    const getWeightedSymbol = () => {
+                        const totalWeight = validSymbols.reduce((acc, symbol) => acc + symbol.weight, 0);
+                        let randomNum = Math.random() * totalWeight;
+                        for (let asset of validSymbols) {
+                            if (randomNum < asset.weight) {
+                                return asset;
+                            }
+                            randomNum -= asset.weight;
+                        }
+                        return validSymbols[0]; 
+                    };
+
                     const spin = () => {
-                        // Выбор случайного символа
                         let rand;
+                        let attempts = 0;
                         do {
-                            rand = validSymbols[Math.floor(Math.random() * validSymbols.length)];
-                        } while (rand.id === prevSymbolId);
+                            rand = getWeightedSymbol();
+                            attempts++;
+                        } while (rand.id === prevSymbolId && attempts < 5);
                         prevSymbolId = rand.id;
-
-                        // Обновляем символ
                         symbolEl.innerText = rand.val;
-                        
-                        // --- УБРАН БЛЮР (blur-motion) ПО ПРОСЬБЕ ---
-                        // symbolEl.classList.add('blur-motion'); <--- Удалено
-
                         AudioSys.tick();
 
                         if (delay < 500) {
                             delay = Math.floor(delay * 1.15);
                             setTimeout(spin, delay);
                         } else {
-                            // ФИНАЛ
                             this.bonusTargetSymbol = rand;
-                            
-                            // Эффект "приземления" символа
-                            symbolEl.classList.remove('blur-motion'); // На всякий случай
                             symbolEl.classList.add('symbol-landed');
-                            
                             AudioSys.selected();
-                            
-                            // Обновляем текст
                             textEl.classList.remove('animate-pulse');
                             textEl.innerHTML = `СИМВОЛ ВЫБРАН: <span class="text-white text-lg">${rand.val}</span>`;
-                            
-                            // Возвращаем кнопку, но уже с новой функцией
                             btn.innerText = "НАЧАТЬ ИГРУ";
                             btn.classList.remove('opacity-0', 'pointer-events-none', 'bg-gradient-to-r', 'from-yellow-500', 'to-orange-600');
-                            // Делаем кнопку зеленой для старта
                             btn.classList.add('bg-green-600', 'hover:bg-green-500', 'btn-pop-in');
-                            
-                            // Теперь кнопка запускает саму игру
                             btn.onclick = () => this.startActualBonusGame();
                         }
                     };
-
                     spin();
                 }
 
@@ -865,8 +873,8 @@
                     this.updateUI();
                     AudioSys.bonusStart();
                     setTimeout(() => this.spin(), 1000);
-                    this.bonusSessionWin = 0; // Сбрасываем счетчик сессии
-                    this.ui.bonusTotalDisplay.innerText = "0"; // Обновляем визуал
+                    this.bonusSessionWin = 0; 
+                    this.ui.bonusTotalDisplay.innerText = "0"; 
                 }
 
                 endBonusRound() {
@@ -874,74 +882,96 @@
                     this.bonusTargetSymbol = null;
                     this.ui.btnSpin.disabled = false; 
                     this.updateUI();
-                    
-                    // Показываем сколько всего подняли за бонус
                     this.showFloatingText(`TOTAL WIN: ${this.bonusSessionWin}`, true);
                     AudioSys.win();
                 }
 
+                // --- ИЗМЕНЕННАЯ ЛОГИКА ВЗРЫВА ---
                 async processBombs(grid) {
                     let bombs = [];
-                    // 1. Сначала находим все бомбы на поле
                     grid.forEach((col, c) => col.forEach((s, r) => {
                         if (s.id === 9) bombs.push({c, r});
                     }));
 
                     if (bombs.length === 0) return; 
 
-                    // 2. Взрываем их по очереди
                     for (const b of bombs) {
-                        const replacement = this.bonusTargetSymbol || ASSETS.find(a => a.id === 1); // Фоллбэк на вишню
+                        const defaultReplacement = this.bonusTargetSymbol || ASSETS.find(a => a.id === 1);
 
-                        // Визуально начинаем тикать текущей бомбой
                         const bombEl = this.reels[b.c].el.children[b.r];
                         if (bombEl) {
                             bombEl.classList.add('bomb-tick');
                             AudioSys.bombTick();
                         }
                         
-                        // Ждем перед взрывом
                         await new Promise(r => setTimeout(r, 600)); 
 
-                        // БАБАХ!
                         AudioSys.bombExplode();
-                        this.triggerShake(); // Тряска экрана (если ты её добавлял)
+                        this.triggerShake(); 
                         
-                        // 3. Обрабатываем радиус поражения
                         for (let c = b.c - 1; c <= b.c + 1; c++) {
                             for (let r = b.r - 1; r <= b.r + 1; r++) {
-                                // Проверка границ поля
                                 if (c >= 0 && c < 5 && r >= 0 && r < 3) {
+                                    // Логика креста (без углов)
+                                    if (c !== b.c && r !== b.r) continue;
+
                                     const targetId = grid[c][r].id;
-
-                                    // --- ИСПРАВЛЕНИЕ ТУТ ---
                                     
-                                    // 1. Скаттер (8) не трогаем никогда
-                                    if (targetId === 8) continue; 
-
-                                    // 2. Если в клетке БОМБА (9), и это НЕ та бомба, которая сейчас взрывается...
-                                    // ...то мы её НЕ трогаем. Пусть ждет своей очереди.
-                                    if (targetId === 9 && (c !== b.c || r !== b.r)) continue;
-
+                                    // --- ВАЖНАЯ ПРОВЕРКА ---
+                                    if (targetId === 8) continue; // Скаттер не трогаем
+                                    if (targetId === 9 && (c !== b.c || r !== b.r)) continue; // Чужие бомбы не трогаем
+                                    if (targetId === 11) continue; // !!! ЗАЩИТА СУЩЕСТВУЮЩИХ МНОЖИТЕЛЕЙ !!!
                                     // -----------------------
 
-                                    // Заменяем данные в сетке
-                                    grid[c][r] = replacement;
+                                    let finalReplacement = defaultReplacement;
+
+                                    // Если это ЦЕНТР взрыва (сама бомба), то может выпасть множитель
+                                    if (c === b.c && r === b.r) {
+                                        const rand = Math.random() * 100;
+                                        
+                                        // 0.1% шанс на x50
+                                        if (rand < 0.1) {
+                                            finalReplacement = { id: 11, val: 'x50', mul: 50, payout: 0, weight: 0 };
+                                        } 
+                                        // 1% шанс на x10 (0.1 -> 1.1)
+                                        else if (rand < 1.1) {
+                                            finalReplacement = { id: 11, val: 'x10', mul: 10, payout: 0, weight: 0 };
+                                        }
+                                        // 3% шанс на x5 (1.1 -> 4.1)
+                                        else if (rand < 4.1) {
+                                            finalReplacement = { id: 11, val: 'x5', mul: 5, payout: 0, weight: 0 };
+                                        }
+                                        // 6% шанс на x3 (4.1 -> 10.1)
+                                        else if (rand < 10.1) {
+                                            finalReplacement = { id: 11, val: 'x3', mul: 3, payout: 0, weight: 0 };
+                                        }
+                                        // 10% шанс на x2 (10.1 -> 20.1)
+                                        else if (rand < 20.1) {
+                                            finalReplacement = { id: 11, val: 'x2', mul: 2, payout: 0, weight: 0 };
+                                        }
+                                    }
+
+                                    // Заменяем в данных
+                                    grid[c][r] = finalReplacement;
                                     
-                                    // Обновляем визуал
+                                    // Обновляем в DOM
                                     const cell = this.reels[c].el.children[r];
                                     if(cell) {
-                                        cell.innerText = replacement.val;
-                                        cell.classList.remove('bomb-tick'); 
-                                        cell.classList.add('explosion-flash');
+                                        // Если выпал множитель - ставим стили
+                                        if (finalReplacement.mul) {
+                                            cell.innerText = finalReplacement.val;
+                                            cell.className = `slot-symbol explosion-flash mult-x${finalReplacement.mul}`;
+                                            AudioSys.multAppear(); // Звук появления множителя
+                                        } else {
+                                            cell.innerText = finalReplacement.val;
+                                            cell.className = 'slot-symbol explosion-flash';
+                                        }
                                         
-                                        // Очищаем вспышку
                                         setTimeout(() => cell.classList.remove('explosion-flash'), 400);
                                     }
                                 }
                             }
                         }
-                        // Небольшая пауза перед взрывом следующей бомбы в списке
                         await new Promise(r => setTimeout(r, 400));
                     }
                 }
@@ -987,16 +1017,12 @@
                         }
                         return new Promise(r => setTimeout(() => {
                             if(crownsPerReel[i] === 1) {
-                            // Считаем скаттеры, которые УЖЕ выпали (включая текущий)
-                            const currentScattersCount = crownsPerReel.slice(0, i + 1).reduce((a, b) => a + b, 0);
-                            // Считаем сколько барабанов осталось впереди
-                            const remainingReels = 4 - i;
-
-                            // Звук играет только если теоретически еще возможно собрать 3 скаттера
-                            if (currentScattersCount + remainingReels >= 3) {
-                                setTimeout(() => AudioSys.scatter(), duration - 20);
+                                const currentScattersCount = crownsPerReel.slice(0, i + 1).reduce((a, b) => a + b, 0);
+                                const remainingReels = 4 - i;
+                                if (currentScattersCount + remainingReels >= 3) {
+                                    setTimeout(() => AudioSys.scatter(), duration - 20);
+                                }
                             }
-                        }
                             reel.spin(resultGrid[i], duration, extraSymbols, this.isBonusMode).then(r);
                         }, delay));
                     });
@@ -1022,35 +1048,19 @@
 
                 cycleWinLines(winLinesData) {
                     let currentIndex = 0;
-                    
                     const showNext = () => {
-                        // 1. Очищаем SVG линий
                         this.ui.svg.innerHTML = ''; 
-                        
-                        // 2. Убираем ПОДСВЕТКУ (Light) со всех символов
-                        // Это критически важно, чтобы старая линия перестала светиться
                         document.querySelectorAll('.win-anim-light').forEach(el => {
                              el.classList.remove('win-anim-light');
                         });
-
-                        // 3. Берем текущую линию
                         const currentData = winLinesData[currentIndex];
-                        
-                        // 4. Рисуем только эту линию
                         this.drawLine(currentData.lineIdx); 
-
-                        // 5. Включаем ПОДСВЕТКУ только для символов этой линии
                         currentData.symbols.forEach(pos => {
                             this.addSymbolEffect(pos.c, pos.r, 'light');
                         });
-                        
-                        // Переходим к следующему индексу
                         currentIndex = (currentIndex + 1) % winLinesData.length;
                     };
-
-                    // Сразу показываем первую линию из цикла
                     showNext();
-                    // Ставим интервал смены (1000мс = 1 секунда)
                     this.winCycleInterval = setInterval(showNext, 1000);
                 }
 
@@ -1059,21 +1069,20 @@
                     const step = (timestamp) => {
                         if (!startTimestamp) startTimestamp = timestamp;
                         const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                        // Easing function для плавности (easeOutExpo)
                         const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
-                        
                         const currentVal = Math.floor(progress * (end - start) + start);
                         element.innerText = currentVal;
-                        
                         if (progress < 1) {
                             window.requestAnimationFrame(step);
                         } else {
-                            element.innerText = end; // Гарантируем точное конечное значение
+                            element.innerText = end;
                         }
                     };
                     window.requestAnimationFrame(step);
                 }
 
+                // --- ИЗМЕНЕННАЯ ЛОГИКА ВЫПЛАТ (МНОЖИТЕЛИ) ---
+                // --- ИСПРАВЛЕННАЯ ЛОГИКА (Множитель = Бонусный Символ) ---
                 checkWin(grid) {
                     let totalWin = 0;
                     let winLinesData = []; 
@@ -1084,65 +1093,92 @@
                         const p = lineCfg.path; 
                         const lineSymbols = [grid[0][p[0]], grid[1][p[1]], grid[2][p[2]], grid[3][p[3]], grid[4][p[4]]];
                         
-                        // Скаттер(8) и Бомба(9) в начале сразу ломают линию
+                        // Скаттер(8) и Бомба(9) ломают линию сразу
                         if (lineSymbols[0].id === 8 || lineSymbols[0].id === 9) continue;
 
-                        // Сбор статистики за один проход
-                        let targetId = null; // Какой символ собираем (вишня, лимон...)
-                        let len = 0;         // Общая длина совпавшей цепочки
-                        let wCount = 0;      // Клеверов в цепочке
-                        let rCount = 0;      // Обычных символов в цепочке
-                        let initialWilds = 0; // Клеверов подряд со старта
+                        let targetId = null; 
+                        let len = 0;         
+                        let wCount = 0;      
+                        let rCount = 0;      
+                        let initialWilds = 0; 
+                        
+                        let lineMultiplier = 1;
 
                         for (let s of lineSymbols) {
-                            const sid = s.id;
-                            if (sid === 8 || sid === 9) break; // Стоп-символы
+                            // 1. Проверяем стоп-символы
+                            if (s.id === 8 || s.id === 9) break;
 
-                            // Считаем начальные вайлды (пока не встретили обычный)
-                            if (sid === 10 && targetId === null) initialWilds++;
+                            // 2. Считаем множитель
+                            if (s.mul && s.mul > 1) {
+                                lineMultiplier *= s.mul;
+                            }
 
-                            // Определяем цель, если еще не нашли
-                            if (sid !== 10 && targetId === null) targetId = sid;
+                            // 3. ОПРЕДЕЛЯЕМ ЭФФЕКТИВНЫЙ ID
+                            let effectiveId = s.id;
 
-                            // Проверяем совпадение
-                            if (sid === 10 || sid === targetId || targetId === null) {
+                            // Если это Множитель (ID 11), он считается КАК БОНУСНЫЙ СИМВОЛ
+                            if (s.id === 11) {
+                                if (this.bonusTargetSymbol) {
+                                    effectiveId = this.bonusTargetSymbol.id;
+                                } else {
+                                    // Если вдруг бонуса нет (баг), считаем его "мусором", который ломает линию
+                                    effectiveId = -999; 
+                                }
+                            }
+
+                            // 4. Только ID 10 (Радуга) является настоящим Wild
+                            const isWild = (effectiveId === 10);
+
+                            // Логика определения линии
+                            if (isWild && targetId === null) initialWilds++;
+                            
+                            // Если встретили не Wild, он задает "цель" линии (Вишня, Лимон и т.д.)
+                            if (!isWild && targetId === null) targetId = effectiveId;
+
+                            // Проверка совпадения
+                            if (isWild || effectiveId === targetId || targetId === null) {
                                 len++;
-                                if (sid === 10) wCount++; else rCount++;
+                                if (isWild) wCount++; else rCount++;
                             } else {
-                                break; // Цепочка прервалась (другой символ)
+                                break; // Цепочка прервалась
                             }
                         }
 
-                        // Принятие решения
+                        // Решение о выплате
                         let finalCount = 0;
                         let finalAssetId = null;
 
                         if (targetId === null) {
-                            // Сценарий 1: Вся линия только из Клеверов
+                            // Только одни Вайлды (Радуги)
                             if (len >= 3) {
                                 finalCount = len;
                                 finalAssetId = 10;
                             }
                         } else {
-                            // Сценарий 2: Смешанная линия
+                            // Смешанная линия
                             if (len >= 3 && rCount > wCount) {
-                                // Правило выполнено: Обычных > Клеверов
                                 finalCount = len;
                                 finalAssetId = targetId;
                             } 
                             else if (initialWilds >= 3) {
-                                // Правило провалено (клеверов слишком много), 
-                                // НО начало линии состоит из 3+ клеверов -> Платим как за Клеверы
+                                // Слишком много вайлдов в начале
                                 finalCount = initialWilds;
                                 finalAssetId = 10;
                             }
                         }
 
-                        // Выплата
+                        // Начисление выигрыша
                         if (finalCount > 0) {
                             const asset = ASSETS.find(a => a.id === finalAssetId);
                             const mult = finalCount === 3 ? 0.2 : (finalCount === 4 ? 0.5 : 1.0);
-                            totalWin += Math.floor(this.betPerLine * asset.payout * mult);
+                            
+                            // Базовая выплата
+                            let winAmount = Math.floor(this.betPerLine * asset.payout * mult);
+                            
+                            // Применяем собранный множитель
+                            winAmount *= lineMultiplier;
+
+                            totalWin += winAmount;
                             
                             let coords = [];
                             for(let k=0; k<finalCount; k++) { 
@@ -1154,6 +1190,7 @@
                         }
                     }
 
+                    // --- Скаттеры считаем отдельно (без изменений) ---
                     let scatterCount = 0;
                     let scatterPositions = []; 
 
@@ -1183,16 +1220,10 @@
                             this.auto = false; 
                             this.ui.btnAuto.classList.remove('active-auto');
                             
-                            // --- НОВАЯ ЛОГИКА ОЧЕРЕДИ ---
-                            // Проверяем, будет ли показано окно Big Win (условие x20 от ставки)
                             const isBigWin = totalWin >= this.getTotalBet() * 20;
-
                             if (isBigWin) {
-                                // Если большой выигрыш - ставим бонус в очередь.
-                                // Он запустится только в game.closeWinModal()
                                 this.queuedBonus = true;
                             } else {
-                                // Если выигрыш обычный - запускаем бонус как раньше (через 1 сек)
                                 setTimeout(() => {
                                     this.showBonusEntryModal();
                                     confetti({ particleCount: 100, spread: 100, origin: { y: 0.6 }, colors: ['#fbbf24', '#818cf8'], scalar: 1.2, ticks: 200 });
@@ -1202,18 +1233,14 @@
                     } 
 
                     if(totalWin > 0) {
-                        // Анимация изменения баланса
                         const oldBalance = this.balance;
                         this.balance += totalWin;
                         this.animateCount(this.ui.bal, oldBalance, this.balance, 1500);
 
-                        // --- ЛОГИКА БОНУСНОГО СЧЕТЧИКА ---
                         if (this.isBonusMode) {
                             this.bonusSessionWin += totalWin;
-                            // Тоже анимируем число для красоты
                             this.animateCount(this.ui.bonusTotalDisplay, this.bonusSessionWin - totalWin, this.bonusSessionWin, 1000);
                         }
-                        // ----------------------------------
 
                         this.ui.win.innerText = totalWin; 
                         
