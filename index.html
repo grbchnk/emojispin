@@ -1084,180 +1084,170 @@
                 // --- ИЗМЕНЕННАЯ ЛОГИКА ВЫПЛАТ (МНОЖИТЕЛИ) ---
                 // --- ИСПРАВЛЕННАЯ ЛОГИКА (Множитель = Бонусный Символ) ---
                 checkWin(grid) {
-                    let totalWin = 0;
-                    let winLinesData = []; 
+    let totalWin = 0;
+    let winLinesData = [];
 
-                    for(let i=0; i<this.lines; i++) {
-                        const lineCfg = LINES_MAP[i];
-                        if(!lineCfg) continue;
-                        const p = lineCfg.path; 
-                        const lineSymbols = [grid[0][p[0]], grid[1][p[1]], grid[2][p[2]], grid[3][p[3]], grid[4][p[4]]];
-                        
-                        // Скаттер(8) и Бомба(9) ломают линию сразу
-                        if (lineSymbols[0].id === 8 || lineSymbols[0].id === 9) continue;
+    for(let i=0; i<this.lines; i++) {
+        const lineCfg = LINES_MAP[i];
+        if(!lineCfg) continue;
+        const p = lineCfg.path;
+        const lineSymbols = [grid[0][p[0]], grid[1][p[1]], grid[2][p[2]], grid[3][p[3]], grid[4][p[4]]];
+        
+        // Скаттер(8) и Бомба(9) ломают линию сразу
+        if (lineSymbols[0].id === 8 || lineSymbols[0].id === 9) continue;
 
-                        let targetId = null; 
-                        let len = 0;         
-                        let wCount = 0;      
-                        let rCount = 0;      
-                        let initialWilds = 0; 
-                        
-                        let lineMultiplier = 1;
+        let targetId = null;
+        let len = 0;
+        let wCount = 0;      
+        let rCount = 0;      
+        let initialWilds = 0;
+        
+        let lineMultiplier = 1;
 
-                        for (let s of lineSymbols) {
-                            // 1. Проверяем стоп-символы
-                            if (s.id === 8 || s.id === 9) break;
+        for (let s of lineSymbols) {
+            if (s.id === 8 || s.id === 9) break;
 
-                            // 2. Считаем множитель
-                            if (s.mul && s.mul > 1) {
-                                lineMultiplier *= s.mul;
-                            }
+            if (s.mul && s.mul > 1) {
+                lineMultiplier *= s.mul;
+            }
 
-                            // 3. ОПРЕДЕЛЯЕМ ЭФФЕКТИВНЫЙ ID
-                            let effectiveId = s.id;
+            let effectiveId = s.id;
+            if (s.id === 11) {
+                effectiveId = this.bonusTargetSymbol ? this.bonusTargetSymbol.id : -999;
+            }
 
-                            // Если это Множитель (ID 11), он считается КАК БОНУСНЫЙ СИМВОЛ
-                            if (s.id === 11) {
-                                if (this.bonusTargetSymbol) {
-                                    effectiveId = this.bonusTargetSymbol.id;
-                                } else {
-                                    // Если вдруг бонуса нет (баг), считаем его "мусором", который ломает линию
-                                    effectiveId = -999; 
-                                }
-                            }
+            const isWild = (effectiveId === 10);
+            if (isWild && targetId === null) initialWilds++;
+            if (!isWild && targetId === null) targetId = effectiveId;
 
-                            // 4. Только ID 10 (Радуга) является настоящим Wild
-                            const isWild = (effectiveId === 10);
+            if (isWild || effectiveId === targetId || targetId === null) {
+                len++;
+                if (isWild) wCount++; else rCount++;
+            } else {
+                break; 
+            }
+        }
 
-                            // Логика определения линии
-                            if (isWild && targetId === null) initialWilds++;
-                            
-                            // Если встретили не Wild, он задает "цель" линии (Вишня, Лимон и т.д.)
-                            if (!isWild && targetId === null) targetId = effectiveId;
+        // --- ИЗМЕНЕНИЯ ЗДЕСЬ ---
+        let finalCount = 0;
+        let finalAssetId = null;
 
-                            // Проверка совпадения
-                            if (isWild || effectiveId === targetId || targetId === null) {
-                                len++;
-                                if (isWild) wCount++; else rCount++;
-                            } else {
-                                break; // Цепочка прервалась
-                            }
-                        }
+        // Проверяем, является ли целевой символ Короной (ID 7)
+        const isCrown = (targetId === 7);
+        // Если Корона - минимум 2, иначе 3
+        const minLen = isCrown ? 2 : 3;
 
-                        // Решение о выплате
-                        let finalCount = 0;
-                        let finalAssetId = null;
+        if (targetId === null) {
+            // Только одни Вайлды (Радуги) - всегда от 3
+            if (len >= 3) {
+                finalCount = len;
+                finalAssetId = 10;
+            }
+        } else {
+            // Смешанная линия
+            // Добавлено условие: (isCrown && len >= 2), чтобы засчитывать [Корона + Вайлд] или [Корона + Корона]
+            if (len >= minLen && (rCount > wCount || (isCrown && len === 2))) {
+                finalCount = len;
+                finalAssetId = targetId;
+            } 
+            else if (initialWilds >= 3) {
+                finalCount = initialWilds;
+                finalAssetId = 10;
+            }
+        }
 
-                        if (targetId === null) {
-                            // Только одни Вайлды (Радуги)
-                            if (len >= 3) {
-                                finalCount = len;
-                                finalAssetId = 10;
-                            }
-                        } else {
-                            // Смешанная линия
-                            if (len >= 3 && rCount > wCount) {
-                                finalCount = len;
-                                finalAssetId = targetId;
-                            } 
-                            else if (initialWilds >= 3) {
-                                // Слишком много вайлдов в начале
-                                finalCount = initialWilds;
-                                finalAssetId = 10;
-                            }
-                        }
+        if (finalCount > 0) {
+            const asset = ASSETS.find(a => a.id === finalAssetId);
+            
+            // --- НАСТРОЙКА МНОЖИТЕЛЯ ВЫПЛАТЫ ---
+            let mult = 1.0;
+            if (finalCount === 2) mult = 0.05; // 5% от полной выплаты за 2 символа (например, 25 монет)
+            else if (finalCount === 3) mult = 0.2;
+            else if (finalCount === 4) mult = 0.5;
+            
+            let winAmount = Math.floor(this.betPerLine * asset.payout * mult);
+            winAmount *= lineMultiplier;
 
-                        // Начисление выигрыша
-                        if (finalCount > 0) {
-                            const asset = ASSETS.find(a => a.id === finalAssetId);
-                            const mult = finalCount === 3 ? 0.2 : (finalCount === 4 ? 0.5 : 1.0);
-                            
-                            // Базовая выплата
-                            let winAmount = Math.floor(this.betPerLine * asset.payout * mult);
-                            
-                            // Применяем собранный множитель
-                            winAmount *= lineMultiplier;
+            totalWin += winAmount;
+            
+            let coords = [];
+            for(let k=0; k<finalCount; k++) { 
+                coords.push({ c: k, r: p[k] });
+                this.addSymbolEffect(k, p[k], 'scale'); 
+                this.addSymbolEffect(k, p[k], 'light');
+            }
+            winLinesData.push({ lineIdx: i, symbols: coords });
+        }
+    }
 
-                            totalWin += winAmount;
-                            
-                            let coords = [];
-                            for(let k=0; k<finalCount; k++) { 
-                                coords.push({ c: k, r: p[k] });
-                                this.addSymbolEffect(k, p[k], 'scale'); 
-                                this.addSymbolEffect(k, p[k], 'light');
-                            }
-                            winLinesData.push({ lineIdx: i, symbols: coords });
-                        }
-                    }
+    // --- ДАЛЕЕ КОД БЕЗ ИЗМЕНЕНИЙ (ЛОГИКА СКАТТЕРОВ) ---
+    let scatterCount = 0;
+    let scatterPositions = []; 
 
-                    // --- Скаттеры считаем отдельно (без изменений) ---
-                    let scatterCount = 0;
-                    let scatterPositions = []; 
+    grid.forEach((col, colIdx) => {
+        col.forEach((s, rowIdx) => {
+            if(s.id === 8) {
+                scatterCount++;
+                scatterPositions.push({c: colIdx, r: rowIdx});
+            }
+        });
+    });
 
-                    grid.forEach((col, colIdx) => {
-                        col.forEach((s, rowIdx) => {
-                            if(s.id === 8) {
-                                scatterCount++;
-                                scatterPositions.push({c: colIdx, r: rowIdx});
-                            }
-                        });
-                    });
+    if(scatterCount >= 3) {
+        scatterPositions.forEach(pos => {
+            this.addSymbolEffect(pos.c, pos.r, 'scale');
+            this.addSymbolEffect(pos.c, pos.r, 'light');
+        });
+        totalWin += (SCATTER_PAYOUTS[scatterCount] || 0);
+        
+        if (this.isBonusMode) {
+            this.freeSpins += 15;
+            this.showFloatingText("+15 FREE SPINS!", true); 
+            AudioSys.bonusStart();
+            confetti({ particleCount: 40, spread: 60, origin: { y: 0.6 }, colors: ['#fbbf24'], scalar: 1.3 });
+        } else {
+            this.isWaitBonus = true; 
+            this.auto = false; 
+            this.ui.btnAuto.classList.remove('active-auto');
+            
+            const isBigWin = totalWin >= this.getTotalBet() * 20;
+            if (isBigWin) {
+                this.queuedBonus = true;
+            } else {
+                setTimeout(() => {
+                    this.showBonusEntryModal();
+                    confetti({ particleCount: 100, spread: 100, origin: { y: 0.6 }, colors: ['#fbbf24', '#818cf8'], scalar: 1.2, ticks: 200 });
+                }, 1000);
+            }
+        }
+    } 
 
-                    if(scatterCount >= 3) {
-                        scatterPositions.forEach(pos => {
-                            this.addSymbolEffect(pos.c, pos.r, 'scale');
-                            this.addSymbolEffect(pos.c, pos.r, 'light');
-                        });
-                        totalWin += (SCATTER_PAYOUTS[scatterCount] || 0);
-                        
-                        if (this.isBonusMode) {
-                            this.freeSpins += 15;
-                            this.showFloatingText("+15 FREE SPINS!", true); 
-                            AudioSys.bonusStart();
-                            confetti({ particleCount: 40, spread: 60, origin: { y: 0.6 }, colors: ['#fbbf24'], scalar: 1.3 });
-                        } else {
-                            this.isWaitBonus = true; 
-                            this.auto = false; 
-                            this.ui.btnAuto.classList.remove('active-auto');
-                            
-                            const isBigWin = totalWin >= this.getTotalBet() * 20;
-                            if (isBigWin) {
-                                this.queuedBonus = true;
-                            } else {
-                                setTimeout(() => {
-                                    this.showBonusEntryModal();
-                                    confetti({ particleCount: 100, spread: 100, origin: { y: 0.6 }, colors: ['#fbbf24', '#818cf8'], scalar: 1.2, ticks: 200 });
-                                }, 1000);
-                            }
-                        }
-                    } 
+    if(totalWin > 0) {
+        const oldBalance = this.balance;
+        this.balance += totalWin;
+        this.animateCount(this.ui.bal, oldBalance, this.balance, 1500);
 
-                    if(totalWin > 0) {
-                        const oldBalance = this.balance;
-                        this.balance += totalWin;
-                        this.animateCount(this.ui.bal, oldBalance, this.balance, 1500);
+        if (this.isBonusMode) {
+            this.bonusSessionWin += totalWin;
+            this.animateCount(this.ui.bonusTotalDisplay, this.bonusSessionWin - totalWin, this.bonusSessionWin, 1000);
+        }
 
-                        if (this.isBonusMode) {
-                            this.bonusSessionWin += totalWin;
-                            this.animateCount(this.ui.bonusTotalDisplay, this.bonusSessionWin - totalWin, this.bonusSessionWin, 1000);
-                        }
-
-                        this.ui.win.innerText = totalWin; 
-                        
-                        if(!this.isBonusMode) this.ui.status.innerHTML = `<span class="text-yellow-400 font-bold animate-pulse">ВЫИГРЫШ: ${totalWin}!</span>`;
-                        AudioSys.win();
-                        
-                        if (winLinesData.length > 0) {
-                            this.ui.svg.innerHTML = '';
-                            winLinesData.forEach(w => this.drawLine(w.lineIdx));
-                            if (winLinesData.length > 1) {
-                                this.winCycleTimeout = setTimeout(() => this.cycleWinLines(winLinesData), 1000);
-                            }
-                        }
-                        this.showFloatingText(`+${totalWin}`);
-                        if(totalWin >= this.getTotalBet() * 20) this.celebrateBigWin(totalWin);
-                    }
-                }
+        this.ui.win.innerText = totalWin; 
+        
+        if(!this.isBonusMode) this.ui.status.innerHTML = `<span class="text-yellow-400 font-bold animate-pulse">ВЫИГРЫШ: ${totalWin}!</span>`;
+        AudioSys.win();
+        
+        if (winLinesData.length > 0) {
+            this.ui.svg.innerHTML = '';
+            winLinesData.forEach(w => this.drawLine(w.lineIdx));
+            if (winLinesData.length > 1) {
+                this.winCycleTimeout = setTimeout(() => this.cycleWinLines(winLinesData), 1000);
+            }
+        }
+        this.showFloatingText(`+${totalWin}`);
+        if(totalWin >= this.getTotalBet() * 20) this.celebrateBigWin(totalWin);
+    }
+}
 
                 addSymbolEffect(c, r, type) {
                     const col = this.reels[c].el;
@@ -1311,4 +1301,5 @@
     </script>
 </body>
 </html>
+
 
