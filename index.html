@@ -382,9 +382,9 @@
                 { id: 10, val: '🌈', payout: 250, weight: 5 }, // WILD (Вайлд)
                 { id: 9, val: '💣', payout: 0, weight: 0 }, 
                 { id: 8, val: '💎', payout: 0, weight: 8 }, 
-                { id: 7, val: '👑', payout: 250, weight: 5 },
-                { id: 6, val: '🏰', payout: 100, weight: 10 },
-                { id: 5, val: '🗝️', payout: 70, weight: 15 },
+                { id: 7, val: '👑', payout: 500, weight: 5 },
+                { id: 6, val: '🏰', payout: 250, weight: 10 },
+                { id: 5, val: '🗝️', payout: 100, weight: 15 },
                 { id: 4, val: '🍉', payout: 50, weight: 20 },
                 { id: 3, val: '🍇', payout: 30, weight: 25 },
                 { id: 2, val: '🍋', payout: 20, weight: 30 },
@@ -614,9 +614,9 @@
                     const scatterInfo = document.createElement('div');
                     scatterInfo.className = 'col-span-4 md:col-span-9 bg-slate-800/80 rounded p-2 mb-2 text-center text-[10px] font-bold border border-white/10 grid grid-cols-1 md:grid-cols-3 gap-2 items-center';
                     scatterInfo.innerHTML = `
-                        <div class="text-yellow-300">👽 SCATTER: 3x = BONUS</div>
-                        <div class="text-green-400">🌈 WILD: Заменяет символ</div>
-                        <div class="text-red-400">💣 BOMB: Оставляет x2, x3, x5, x10 или x50!</div>
+                        <div class="text-yellow-300">💎 SCATTER</div>
+                        <div class="text-green-400">🌈 WILD</div>
+                        <div class="text-red-400">💣 BOMB!</div>
                     `;
                     this.ui.legend.appendChild(scatterInfo);
 
@@ -1311,3 +1311,4 @@
     </script>
 </body>
 </html>
+
