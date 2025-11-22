@@ -3,14 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JIGULUCK: Bonus Edition</title>
+    <title>JIGULUCK: Bonus Bomb Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap');
 
-        :root { --reel-height: 100px; }
+        :root {
+            --reel-height: 100px; 
+            --symbol-sz: 3rem;
+        }
         
         body {
             font-family: 'Montserrat', sans-serif;
@@ -22,21 +25,15 @@
         }
 
         .glass-panel {
-            background: rgba(15, 23, 42, 0.7);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background: rgba(15, 23, 42, 0.9); 
             border: 1px solid rgba(255, 255, 255, 0.08);
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
             transition: all 0.5s ease;
         }
 
-        /* Стиль активного бонуса */
         .bonus-active .glass-panel#game-wrapper {
             border: 2px solid #fbbf24;
             box-shadow: 0 0 30px rgba(251, 191, 36, 0.3);
-        }
-        .bonus-active body {
-            background-image: none; /* Можно затемнить фон */
         }
 
         .slot-window {
@@ -58,14 +55,13 @@
         .slot-symbol {
             height: var(--reel-height);
             width: 100%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 2.5rem;
-        }
-
-        .slot-symbol img {
-            width: 70%; height: 70%;
-            object-fit: contain;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            font-size: var(--symbol-sz);
+            line-height: 1;
             filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5));
+            transition: transform 0.2s, filter 0.2s;
         }
 
         #paylines-svg {
@@ -95,13 +91,60 @@
             box-shadow: 0 0 10px rgba(37, 99, 235, 0.5);
         }
 
-        .win-pulse { 
-            animation: winPulse 0.5s infinite alternate ease-in-out; 
-            z-index: 10; 
+        @keyframes winScale {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
         }
-        @keyframes winPulse {
+
+        @keyframes winLightPulse {
+            0% { filter: brightness(1) drop-shadow(0 0 0 rgba(255, 215, 0, 0)); }
+            50% { filter: brightness(1.8) drop-shadow(0 0 25px rgba(255, 215, 0, 1)); }
+            100% { filter: brightness(1) drop-shadow(0 0 0 rgba(255, 215, 0, 0)); }
+        }
+
+        .win-anim-scale { animation: winScale 1s infinite ease-in-out; z-index: 10; }
+        .win-anim-scale.win-anim-light { animation: winScale 1s infinite ease-in-out, winLightPulse 1s infinite ease-in-out; }
+        .win-anim-light { animation: winLightPulse 1s infinite ease-in-out; z-index: 11; }
+
+        @keyframes bombTick {
             0% { transform: scale(1); filter: brightness(1); }
-            100% { transform: scale(1.2); filter: brightness(1.5) drop-shadow(0 0 15px rgba(255, 215, 0, 0.6)); }
+            50% { transform: scale(1.3); filter: brightness(2) hue-rotate(-50deg); }
+            100% { transform: scale(1); filter: brightness(1); }
+        }
+        .bomb-tick {
+            animation: bombTick 0.3s infinite ease-in-out !important;
+            z-index: 50;
+        }
+
+        @keyframes explosionFlash {
+            0% { transform: scale(0.5); filter: brightness(5) sepia(1) saturate(5); opacity: 0; }
+            30% { transform: scale(1.2); filter: brightness(3); opacity: 1; }
+            100% { transform: scale(1); filter: brightness(1); opacity: 1; }
+        }
+        .explosion-flash {
+            animation: explosionFlash 0.4s ease-out forwards !important;
+            z-index: 40;
+        }
+
+        /* Тряска экрана */
+        @keyframes shake-hard {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            /* БЫЛО: 100% { transform: translate(1px, -2px) rotate(-1deg); } */
+            /* СТАЛО (Сброс в ноль): */
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+
+        .shake-screen {
+            animation: shake-hard 0.3s cubic-bezier(.36,.07,.19,.97) both;
         }
 
         .spin-btn {
@@ -109,15 +152,9 @@
             box-shadow: 0 6px 0 #581c87, 0 15px 20px rgba(0,0,0,0.4);
             transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .spin-btn:active:not(:disabled) {
-            transform: translateY(6px); box-shadow: 0 0 0 #581c87;
-        }
-        .spin-btn:disabled {
-            filter: grayscale(1); cursor: not-allowed;
-            transform: translateY(6px); box-shadow: 0 0 0 #581c87;
-        }
+        .spin-btn:active:not(:disabled) { transform: translateY(6px); box-shadow: 0 0 0 #581c87; }
+        .spin-btn:disabled { filter: grayscale(1); cursor: not-allowed; transform: translateY(6px); box-shadow: 0 0 0 #581c87; }
 
-        /* Кнопка при бонусе (золотая) */
         .bonus-active .spin-btn {
             background: linear-gradient(180deg, #fcd34d 0%, #d97706 100%);
             box-shadow: 0 6px 0 #92400e;
@@ -134,47 +171,52 @@
             background: linear-gradient(180deg, #22c55e 0%, #15803d 100%);
             box-shadow: 0 6px 0 #14532d;
         }
-        .auto-btn:active {
-            transform: translateY(6px); box-shadow: 0 0 0 #0f172a;
-        }
-        .auto-btn:disabled {
-            opacity: 0.5; cursor: not-allowed; transform: translateY(6px); box-shadow: none;
-        }
+        .auto-btn:active { transform: translateY(6px); box-shadow: 0 0 0 #0f172a; }
+        .auto-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: translateY(6px); box-shadow: none; }
 
         .modal-backdrop { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
         .float-text {
-            position: absolute;
-            top: 50%; left: 50%; 
+            position: absolute; top: 50%; left: 50%; 
             transform: translate(-50%, -50%); 
-            color: #fbbf24; 
-            font-weight: 900; 
-            font-size: 4.5rem; 
+            color: #fbbf24; font-weight: 900; 
+            font-size: clamp(2.5rem, 10vw, 5rem);
             text-shadow: 0 4px 0 #000, 0 0 30px rgba(251, 191, 36, 0.5);
-            pointer-events: none;
-            z-index: 100; 
+            pointer-events: none; z-index: 100; 
             animation: floatPop 1.5s ease-out forwards;
             white-space: nowrap;
         }
-
+        .float-bonus {
+            color: #c084fc; 
+            text-shadow: 0 4px 0 #000, 0 0 30px rgba(192, 132, 252, 0.6);
+            font-size: clamp(1.5rem, 6vw, 3.5rem) !important;
+            animation-duration: 3s !important; 
+        }
         @keyframes floatPop {
             0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
             15% { transform: translate(-50%, -80%) scale(1.2); opacity: 1; }
             100% { transform: translate(-50%, -200%) scale(1); opacity: 0; }
         }
 
-        /* Анимация для бонусного окна */
         .bonus-modal-content {
             background: linear-gradient(135deg, #4c1d95 0%, #1e1b4b 100%);
             border: 4px solid #fbbf24;
             box-shadow: 0 0 50px rgba(251, 191, 36, 0.5);
         }
+
+        /* Анимации для выбора символа */
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            70% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .btn-pop-in { animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+        .symbol-landed { animation: winScale 0.5s forwards; filter: drop-shadow(0 0 20px gold); transform: scale(1.2); }
     </style>
 </head>
-<body class="w-full min-h-screen bg-[url('https://images.unsplash.com/photo-1596838132731-3301c3fd4317?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center bg-fixed flex flex-col items-center py-4">
-    
-    <div class="absolute inset-0 bg-gradient-to-b from-slate-900/90 via-slate-900/80 to-slate-900/95 backdrop-blur-[2px] pointer-events-none fixed"></div>
+<body class="w-full min-h-screen bg-gradient-to-b from-slate-950 via-[#1a0b2e] to-slate-900 flex flex-col items-center py-4 text-slate-200">
 
     <div class="relative z-10 w-full max-w-2xl flex flex-col items-center gap-3 px-2">
         
@@ -187,7 +229,7 @@
 
             <div class="text-center pb-1">
                 <h1 class="text-3xl md:text-4xl font-black italic text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 drop-shadow-lg tracking-tighter">
-                    JIGU<span class="text-white">XL</span>
+                    JIGU<span class="text-white">LUCK</span>
                 </h1>
             </div>
 
@@ -200,15 +242,29 @@
         <!-- Main Game Area -->
         <div class="glass-panel p-3 md:p-5 rounded-[2rem] w-full shadow-2xl relative transition-colors duration-500" id="game-wrapper">
             
-            <!-- Info Strip (Bonus Counter) -->
             <div id="bonus-strip" class="hidden absolute -top-4 left-0 w-full flex justify-center z-30">
-                 <div class="bg-yellow-500 text-black font-black px-6 py-1 rounded-full shadow-[0_0_20px_rgba(234,179,8,0.6)] animate-pulse border-2 border-white">
-                    FREE SPINS: <span id="fs-counter">15</span>
+                 <div class="bg-gradient-to-r from-yellow-600 to-yellow-500 text-black font-black px-6 py-1 rounded-full shadow-[0_0_20px_rgba(234,179,8,0.6)] animate-pulse border-2 border-white flex gap-4 items-center text-sm md:text-base">
+                    <!-- Счетчик спинов -->
+                    <span class="flex items-center gap-1">
+                        SPINS: <span id="fs-counter" class="text-white drop-shadow-md text-lg">15</span>
+                    </span>
+                    
+                    <div class="w-px h-4 bg-black/20"></div>
+                    
+                    <!-- Новый счетчик выигрыша -->
+                    <span class="flex items-center gap-1">
+                        WIN: <span id="bonus-total-display" class="text-white drop-shadow-md text-lg">0</span>
+                    </span>
+
+                    <div class="w-px h-4 bg-black/20"></div>
+
+                    <!-- Символ бонуса -->
+                    <span id="active-bonus-symbol" class="text-xl leading-none"></span>
                  </div>
             </div>
 
             <!-- Slot Window -->
-            <div class="bg-slate-950 rounded-xl border-4 border-slate-800 shadow-inner relative overflow-hidden mb-4" style="height: 300px;">
+            <div class="bg-slate-950 rounded-xl border-4 border-slate-800 shadow-inner relative overflow-hidden mb-4 aspect-[5/3] w-full h-auto">
                 <div class="absolute top-0 left-0 w-full h-6 bg-gradient-to-b from-black/70 to-transparent z-20 pointer-events-none"></div>
                 <div class="absolute bottom-0 left-0 w-full h-6 bg-gradient-to-t from-black/70 to-transparent z-20 pointer-events-none"></div>
                 
@@ -229,7 +285,7 @@
                     </div>
 
                     <div class="bg-slate-800/50 rounded-xl p-2 border border-slate-700 flex flex-col justify-center items-center">
-                        <div class="text-[9px] text-slate-400 uppercase font-bold mb-1">Линии (Макс 9)</div>
+                        <div class="text-[9px] text-slate-400 uppercase font-bold mb-1">Линии</div>
                         <div class="flex gap-1 w-full justify-between px-1" id="lines-control-panel">
                             <button class="line-btn w-6 h-6 rounded bg-slate-700 text-[10px] font-bold hover:bg-slate-600 transition border border-transparent disabled:opacity-50" onclick="game.setLines(1)">1</button>
                             <button class="line-btn w-6 h-6 rounded bg-slate-700 text-[10px] font-bold hover:bg-slate-600 transition border border-transparent disabled:opacity-50" onclick="game.setLines(3)">3</button>
@@ -259,15 +315,14 @@
         </div>
 
         <div class="w-full glass-panel p-4 rounded-2xl">
-            <h3 class="text-center text-xs font-bold text-slate-400 uppercase mb-3 tracking-widest">Таблица (за 5 символов)</h3>
-            <div class="grid grid-cols-4 md:grid-cols-8 gap-2" id="legend-grid"></div>
-            <p class="text-[10px] text-center text-slate-500 mt-2">3 символа = 20% | 4 символа = 50% | 5 символов = 100%</p>
+            <h3 class="text-center text-xs font-bold text-slate-400 uppercase mb-3 tracking-widest">Таблица</h3>
+            <div class="grid grid-cols-4 md:grid-cols-9 gap-2" id="legend-grid"></div>
         </div>
 
     </div>
 
-    <!-- Win Modal (Regular) -->
-    <div id="win-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center modal-backdrop bg-black/80 backdrop-blur-sm" onclick="this.classList.add('hidden')">
+    <!-- Modals -->
+    <div id="win-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center modal-backdrop bg-black/80 backdrop-blur-sm" onclick="game.closeWinModal()">
         <div class="text-center transform transition-all scale-110">
             <h2 class="text-5xl font-black text-yellow-400 drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)] mb-2 animate-bounce">НИХУЯ СЕБЕ ВЫИГРЫШ!</h2>
             <p class="text-6xl font-mono font-bold text-white drop-shadow-lg" id="modal-win-amount">0</p>
@@ -275,42 +330,27 @@
         </div>
     </div>
 
-    <!-- Bonus Trigger Modal -->
     <div id="bonus-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center modal-backdrop bg-black/90 backdrop-blur-md">
-        <div class="bonus-modal-content p-8 rounded-3xl text-center transform transition-all max-w-md w-full mx-4 relative overflow-hidden">
-            <!-- Shine effect -->
-            <div class="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30"></div>
-            
-            <div class="relative z-10">
-                <div class="text-6xl mb-4 animate-bounce">💎💎💎</div>
-                <h2 class="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-yellow-400 to-yellow-600 drop-shadow-sm mb-4 uppercase">
-                    БОНУС ИГРА!
-                </h2>
-                <p class="text-white text-lg font-bold mb-8">
-                    ВЫ ВЫИГРАЛИ <br>
-                    <span class="text-5xl text-yellow-400 font-black">15</span> <br>
-                    БЕСПЛАТНЫХ ВРАЩЕНИЙ
-                </p>
-                <button onclick="game.startBonusRound()" class="w-full py-4 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-xl text-xl font-black text-white shadow-xl hover:scale-105 active:scale-95 transition-all border-t border-white/20">
-                    ЗАПУСТИТЬ БОНУС
-                </button>
-            </div>
+        <div class="bonus-modal-content p-8 rounded-3xl text-center transform transition-all max-w-md w-full mx-4 relative overflow-hidden min-h-[400px] flex flex-col justify-center" id="bonus-modal-inner">
+            <!-- Content filled by JS -->
         </div>
     </div>
 
     <script>
             const ASSETS = [
-                { id: 8, val: '💎', img: 'stickers/8.webp', payout: 0, weight: 7 }, 
-                { id: 7, val: '👑', img: 'stickers/7.webp', payout: 500, weight: 5 },
-                { id: 6, val: '7️⃣', img: 'stickers/6.webp', payout: 200, weight: 10 },
-                { id: 5, val: '🔔', img: 'stickers/5.webp', payout: 100, weight: 15 },
-                { id: 4, val: '🍉', img: 'stickers/4.webp', payout: 50, weight: 20 },
-                { id: 3, val: '🍇', img: 'stickers/3.webp', payout: 30, weight: 25 },
-                { id: 2, val: '🍋', img: 'stickers/2.webp', payout: 20, weight: 30 },
-                { id: 1, val: '🍒', img: 'stickers/1.webp', payout: 10, weight: 50 }
+                { id: 10, val: '🍀', payout: 250, weight: 5 }, // WILD (Вайлд)
+                { id: 9, val: '💣', payout: 0, weight: 0 }, 
+                { id: 8, val: '💎', payout: 0, weight: 9 }, 
+                { id: 7, val: '👑', payout: 500, weight: 5 },
+                { id: 6, val: '7️⃣', payout: 200, weight: 10 },
+                { id: 5, val: '🔔', payout: 100, weight: 15 },
+                { id: 4, val: '🍉', payout: 50, weight: 20 },
+                { id: 3, val: '🍇', payout: 30, weight: 25 },
+                { id: 2, val: '🍋', payout: 20, weight: 30 },
+                { id: 1, val: '🍒', payout: 10, weight: 50 }
             ];
 
-            const SCATTER_PAYOUTS = { 3: 500, 4: 2000, 5: 10000 };
+            const SCATTER_PAYOUTS = { 3: 100, 4: 1000, 5: 10000 };
 
             const LINES_MAP = [
                 { idx: 0, color: '#ef4444', path: [1, 1, 1, 1, 1] }, 
@@ -322,10 +362,11 @@
                 { idx: 6, color: '#ec4899', path: [2, 2, 1, 0, 0] }, 
                 { idx: 7, color: '#06b6d4', path: [1, 0, 0, 0, 1] }, 
                 { idx: 8, color: '#6366f1', path: [1, 2, 2, 2, 1] }  
-            ];
+            ]; 
 
             const AudioSys = {
                 ctx: new (window.AudioContext || window.webkitAudioContext)(),
+                
                 playTone(freq, type, duration, vol = 0.1) {
                     if (this.ctx.state === 'suspended') this.ctx.resume();
                     const osc = this.ctx.createOscillator();
@@ -339,14 +380,43 @@
                     osc.start();
                     osc.stop(this.ctx.currentTime + duration);
                 },
-                spin() { this.playTone(150, 'sawtooth', 0.1, 0.05); },
-                stop() { this.playTone(100, 'square', 0.1, 0.1); },
-                win() { [440, 554, 659, 880, 1100].forEach((f, i) => setTimeout(() => this.playTone(f, 'sine', 0.5, 0.2), i*100)); },
-                scatter() { [800, 1200].forEach((f, i) => setTimeout(() => this.playTone(f, 'triangle', 0.2, 0.3), i*150)); },
-                bonusStart() { 
-                    // Фанфары
-                    [392, 523, 659, 784, 523, 659, 784, 1046].forEach((f, i) => setTimeout(() => this.playTone(f, 'sawtooth', 0.3, 0.2), i*120));
-                }
+
+                // ВЕРНУЛИ СОЧНЫЙ ЗВУК СПИНА
+                spin() {
+                    if (this.ctx.state === 'suspended') this.ctx.resume();
+                    const now = this.ctx.currentTime;
+                    const duration = 0.3; 
+
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+
+                    osc.type = 'triangle'; 
+
+                    // Эффект "взлета" (от 200Hz до 600Hz)
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.exponentialRampToValueAtTime(600, now + duration);
+
+                    gain.gain.setValueAtTime(0.35, now); 
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.start(now);
+                    osc.stop(now + duration);
+                },
+
+                stop() { this.playTone(150, 'sine', 0.15, 0.5); },
+                win() { [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => this.playTone(f, 'triangle', 0.4, 0.15), i*80)); },
+                scatter() { [800, 1200].forEach((f, i) => setTimeout(() => this.playTone(f, 'sine', 0.2, 0.1), i*150)); },
+                bonusStart() { [392, 523, 659, 784].forEach((f, i) => setTimeout(() => this.playTone(f, 'triangle', 0.3, 0.2), i*120)); },
+                bombTick() { this.playTone(600, 'sawtooth', 0.1, 0.1); },
+                bombExplode() { 
+                    this.playTone(100, 'square', 0.5, 0.4); 
+                    this.playTone(50, 'sawtooth', 0.8, 0.5); 
+                },
+                tick() { this.playTone(800, 'square', 0.03, 0.1); },
+                selected() { this.playTone(1200, 'sine', 0.5, 0.3); }
             };
 
             class Reel {
@@ -354,29 +424,30 @@
                     this.el = el;
                     this.index = index;
                     this.symbols = [];
-                    this.SYMBOL_HEIGHT = 100; 
                 }
+                get SYMBOL_HEIGHT() { return parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--reel-height')) || 100; }
 
                 init() {
                     this.el.innerHTML = '';
                     this.renderStrip(this.generateRandomSet(3)); 
                 }
 
-                // boostVal - насколько увеличиваем вес (30 обычно, 60 в бонусе)
-                generateRandomSet(count, boostedIds = [], boostVal = 30) {
+                generateRandomSet(count, boostedIds = [], boostVal = 30, isBonusMode = false) {
                     let arr = [];
                     let currentAssets = ASSETS.map(a => ({...a}));
 
                     currentAssets = currentAssets.map(asset => {
                         let newWeight = asset.weight;
-                        if (boostedIds.includes(asset.id) && asset.id !== 8) newWeight += boostVal;
+                        if (asset.id === 9) {
+                            newWeight = isBonusMode ? 10 : 0; 
+                        }
+                        if (boostedIds.includes(asset.id) && asset.id !== 8 && asset.id !== 9 && asset.id !== 10) newWeight += boostVal;
                         return { ...asset, weight: newWeight };
                     });
 
                     for(let i=0; i<count; i++) {
                         currentAssets.sort((a, b) => b.weight - a.weight);
                         const totalWeight = currentAssets.reduce((acc, cur) => acc + (cur.weight / 1.5), 0);
-
                         const rand = Math.random() * totalWeight;
                         let sum = 0;
                         let selected = null;
@@ -385,11 +456,7 @@
                             if(rand <= sum) { selected = s; break; }
                         }
                         if (!selected) selected = currentAssets[currentAssets.length - 1];
-
-                        if (selected.id === 8) {
-                            currentAssets = currentAssets.filter(a => a.id !== 8);
-                        }
-
+                        if (selected.id === 8) currentAssets = currentAssets.filter(a => a.id !== 8);
                         arr.push(ASSETS.find(a => a.id === selected.id));
                     }
                     return arr;
@@ -400,20 +467,15 @@
                     symbolDataArray.forEach(s => {
                         const div = document.createElement('div');
                         div.className = 'slot-symbol';
-                        div.innerHTML = `
-                            <img src="${s.img}" 
-                                onerror="this.style.display='none'; this.parentNode.innerText='${s.val}'"
-                            >`;
+                        div.innerText = s.val; 
                         this.el.appendChild(div);
                     });
                     this.symbols = symbolDataArray;
                 }
 
-                async spin(finalSymbols, duration, extraSymbols) {
+                async spin(finalSymbols, duration, extraSymbols, isBonusMode) {
                     const currentVisible = this.symbols.slice(0, 3);
-                    
-                    // ВАЖНО: Тут для "заполнителя" используем обычную генерацию
-                    const filler = this.generateRandomSet(extraSymbols);
+                    const filler = this.generateRandomSet(extraSymbols, [], 30, isBonusMode);
                     const fullStrip = [...finalSymbols, ...filler, ...currentVisible];
                     
                     this.renderStrip(fullStrip);
@@ -423,14 +485,16 @@
                     this.el.style.transform = `translateY(${startY}px)`;
                     this.el.offsetHeight; 
 
-                    const easing = duration > 4000 ? 'cubic-bezier(0.1, 0, 0.3, 1)' : 'cubic-bezier(0.1, 0, 0.3, 1)';
-
+                    const easing = duration > 2000 ? 'cubic-bezier(0.1, 0, 0.3, 1)' : 'cubic-bezier(0.2, 0, 0.3, 1)';
                     this.el.style.transition = `transform ${duration}ms ${easing}`;
                     this.el.style.transform = `translateY(0px)`;
 
                     return new Promise(resolve => {
                         setTimeout(() => {
-                            AudioSys.stop();
+                            AudioSys.stop(); 
+                            this.renderStrip(finalSymbols);
+                            this.el.style.transition = 'none';
+                            this.el.style.transform = 'translateY(0px)';
                             resolve();
                         }, duration);
                     });
@@ -444,16 +508,21 @@
                     this.lines = 9;
                     this.isSpinning = false;
                     this.auto = false;
-                    
-                    // BONUS SYSTEM
+                    this.isWaitBonus = false; 
                     this.freeSpins = 0;
                     this.isBonusMode = false;
-                    
+                    this.bonusTargetSymbol = null;
+
+                    this.queuedBonus = false;
+
+                    this.bonusSessionWin = 0; 
+
                     this.previewTimeout = null;
                     this.winCycleTimeout = null;
                     this.winCycleInterval = null;
                     
                     this.ui = {
+                        bonusTotalDisplay: document.getElementById('bonus-total-display'),
                         bal: document.getElementById('ui-balance'),
                         win: document.getElementById('ui-win'),
                         bet: document.getElementById('ui-bet'),
@@ -466,13 +535,14 @@
                         modal: document.getElementById('win-modal'),
                         modalAmt: document.getElementById('modal-win-amount'),
                         legend: document.getElementById('legend-grid'),
-                        
-                        // New Bonus UI
                         bonusModal: document.getElementById('bonus-modal'),
+                        bonusModalInner: document.getElementById('bonus-modal-inner'),
                         bonusStrip: document.getElementById('bonus-strip'),
                         fsCounter: document.getElementById('fs-counter'),
+                        activeBonusSymbol: document.getElementById('active-bonus-symbol'),
                         body: document.body,
                         gameWrapper: document.getElementById('game-wrapper')
+                        
                     };
 
                     this.reels = [];
@@ -481,7 +551,7 @@
                     this.updateUI();
                     this.updateLineButtons();
                 }
-
+                
                 setupReels() {
                     const container = document.getElementById('slot-machine');
                     for(let i=0; i<5; i++) {
@@ -496,21 +566,27 @@
 
                 renderLegend() {
                     this.ui.legend.innerHTML = '';
+                    
+                    // Блок описания спец. символов
                     const scatterInfo = document.createElement('div');
-                    scatterInfo.className = 'col-span-4 md:col-span-8 bg-yellow-500/20 rounded p-1 mb-2 text-center text-[10px] font-bold text-yellow-300 border border-yellow-500/30';
-                    scatterInfo.innerHTML = `👑 SCATTER: 3x = БОНУС (15 SPINS)`;
+                    scatterInfo.className = 'col-span-4 md:col-span-9 bg-slate-800/80 rounded p-2 mb-2 text-center text-[10px] font-bold border border-white/10 grid grid-cols-1 md:grid-cols-3 gap-2 items-center';
+                    scatterInfo.innerHTML = `
+                        <div class="text-yellow-300">💎 SCATTER: 3x = BONUS</div>
+                        <div class="text-green-400">🍀 WILD: Заменяет любой символ</div>
+                        <div class="text-red-400">💣 BOMB: Берегись!</div>
+                    `;
                     this.ui.legend.appendChild(scatterInfo);
 
                     ASSETS.forEach(item => {
-                        if(item.id === 8) return; 
+                        // Скрываем бомбу и скаттер из обычной сетки, но показываем Клевер
+                        if(item.id === 8 || item.id === 9) return; 
+                        
                         const el = document.createElement('div');
                         el.className = 'bg-slate-800/50 rounded p-1 flex flex-col items-center justify-center border border-white/5';
-                        el.innerHTML = `
-                            <div class="w-6 h-6 mb-1 flex items-center justify-center">
-                                <img src="${item.img}" onerror="this.style.display='none'; this.parentNode.innerText='${item.val}'" class="w-full h-full object-contain drop-shadow">
-                            </div>
-                            <span class="text-[10px] font-bold text-yellow-400">x${item.payout}</span>
-                        `;
+                        // Подсветка для Вайлда
+                        if(item.id === 10) el.className += ' border-green-500/50 bg-green-900/20';
+                        
+                        el.innerHTML = `<div class="w-8 h-8 mb-1 flex items-center justify-center text-2xl">${item.val}</div><span class="text-[10px] font-bold text-yellow-400">x${item.payout}</span>`;
                         this.ui.legend.appendChild(el);
                     });
                 }
@@ -519,10 +595,13 @@
                     if (this.winCycleTimeout) clearTimeout(this.winCycleTimeout);
                     if (this.winCycleInterval) clearInterval(this.winCycleInterval);
                     this.ui.svg.innerHTML = ''; 
+                    document.querySelectorAll('.win-anim-scale').forEach(el => el.classList.remove('win-anim-scale'));
+                    document.querySelectorAll('.win-anim-light').forEach(el => el.classList.remove('win-anim-light'));
+                    document.querySelectorAll('.bomb-tick').forEach(el => el.classList.remove('bomb-tick'));
                 }
 
                 resetBalance() {
-                    if(this.isBonusMode) return; // Нельзя пополнять во время бонуса
+                    if(this.isBonusMode) return;
                     if(this.balance < 100) {
                         if(confirm("Пополнить баланс до 2000?")) {
                             this.balance = 2000;
@@ -533,7 +612,7 @@
                 }
 
                 adjustBet(delta) {
-                    if(this.isSpinning || this.isBonusMode) return; // Блокировка
+                    if(this.isSpinning || this.isBonusMode) return;
                     const newBet = this.betPerLine + delta;
                     if(newBet >= 10 && newBet <= 500) {
                         this.betPerLine = newBet;
@@ -542,8 +621,22 @@
                     }
                 }
 
+                closeWinModal() {
+                    this.ui.modal.classList.add('hidden');
+                    
+                    // Если в очереди висит бонус - запускаем его после закрытия окна
+                    if (this.queuedBonus) {
+                        this.queuedBonus = false;
+                        // Небольшая задержка для плавности переключения окон
+                        setTimeout(() => {
+                            this.showBonusEntryModal();
+                            confetti({ particleCount: 100, spread: 100, origin: { y: 0.6 }, colors: ['#fbbf24', '#818cf8'], scalar: 1.2, ticks: 200 });
+                        }, 500);
+                    }
+                }
+
                 setLines(n) {
-                    if(this.isSpinning || this.isBonusMode) return; // Блокировка
+                    if(this.isSpinning || this.isBonusMode) return;
                     this.stopWinAnimation();
                     this.lines = n;
                     this.updateUI();
@@ -558,14 +651,12 @@
                         const val = parseInt(btn.innerText);
                         if (val === this.lines) btn.classList.add('active');
                         else btn.classList.remove('active');
-                        
-                        // Визуальная блокировка
                         btn.disabled = this.isSpinning || this.isBonusMode;
                     });
                 }
 
                 toggleAuto() {
-                    if(this.isBonusMode) return; // В бонусе авто всегда включено (скрыто)
+                    if(this.isBonusMode) return;
                     this.auto = !this.auto;
                     this.ui.btnAuto.classList.toggle('active-auto', this.auto);
                     if(this.auto && !this.isSpinning) this.spin();
@@ -579,23 +670,24 @@
                     this.ui.total.innerText = this.getTotalBet();
                     localStorage.setItem('jigu_bal_xl', this.balance);
                     
-                    // Блокировка контролов ставок
-                    const betBtns = document.querySelectorAll('.bet-ctrl');
-                    betBtns.forEach(b => b.disabled = this.isSpinning || this.isBonusMode);
-                    this.ui.btnAuto.disabled = this.isBonusMode;
+                    const isLocked = this.isSpinning || this.isBonusMode || this.auto || this.isWaitBonus;
+                    document.querySelectorAll('.bet-ctrl').forEach(b => b.disabled = isLocked);
+                    document.querySelectorAll('.line-btn').forEach(b => b.disabled = isLocked);
+                    this.ui.btnAuto.disabled = this.isBonusMode || this.isWaitBonus;
 
                     if (this.isBonusMode) {
                         this.ui.body.classList.add('bonus-active');
                         this.ui.bonusStrip.classList.remove('hidden');
                         this.ui.fsCounter.innerText = this.freeSpins;
+                        this.ui.activeBonusSymbol.innerText = this.bonusTargetSymbol ? this.bonusTargetSymbol.val : '';
                         this.ui.status.innerHTML = "<span class='text-yellow-400 animate-pulse'>БОНУС ИГРА!</span>";
                         this.ui.spinText.innerText = `FREE ${this.freeSpins}`;
-                        this.ui.btnSpin.disabled = true; // Кнопка спина недоступна, идет авто
+                        this.ui.btnSpin.disabled = true; 
                     } else {
                         this.ui.body.classList.remove('bonus-active');
                         this.ui.bonusStrip.classList.add('hidden');
                         this.ui.spinText.innerText = "SPIN";
-                        
+                        this.ui.btnSpin.disabled = this.isSpinning || this.isWaitBonus;
                         if(this.balance < this.getTotalBet()) {
                             this.ui.total.classList.add('text-red-500');
                             this.ui.status.innerHTML = "<span class='text-red-400'>Нет средств</span>";
@@ -604,6 +696,28 @@
                             this.ui.status.innerText = this.isSpinning ? "Удачи..." : "Вращай!";
                         }
                     }
+                }
+
+                triggerShake() {
+                    const wrapper = document.getElementById('game-wrapper');
+                    
+                    // Сначала удаляем, если вдруг класс там завис
+                    wrapper.classList.remove('shake-screen');
+                    
+                    // Магия для перезапуска анимации (reflow)
+                    void wrapper.offsetWidth; 
+                    
+                    // Добавляем класс
+                    wrapper.classList.add('shake-screen');
+                    
+                    // Вибрация на мобильных
+                    if (navigator.vibrate) navigator.vibrate(200); 
+
+                    // ВАЖНО: Через 0.3 сек (время анимации) удаляем класс,
+                    // чтобы CSS-трансформации полностью отключились.
+                    setTimeout(() => {
+                        wrapper.classList.remove('shake-screen');
+                    }, 300);
                 }
 
                 drawLinesPreview() {
@@ -629,190 +743,419 @@
                     this.ui.svg.appendChild(el);
                 }
 
-                // Изменено: теперь передаем boostVal в генератор
                 getResults() {
                     let grid = [];
-                    // В бонусе буст 60, в обычной 30
-                    const boostVal = this.isBonusMode ? 60 : 30; 
-                    
-                    grid[0] = this.reels[0].generateRandomSet(3);
+                    const boostVal = this.isBonusMode ? 40 : 20; 
+                    grid[0] = this.reels[0].generateRandomSet(3, [], boostVal, this.isBonusMode);
                     for(let i=1; i<5; i++) {
                         const prevIds = grid[i-1].map(s => s.id);
-                        // Передаем boostVal
-                        grid[i] = this.reels[i].generateRandomSet(3, prevIds, boostVal);
+                        grid[i] = this.reels[i].generateRandomSet(3, prevIds, boostVal, this.isBonusMode);
                     }
                     return grid;
                 }
 
-                startBonusRound() {
+                showBonusEntryModal() {
+                    // Создаем единую структуру сразу
+                    this.ui.bonusModalInner.innerHTML = `
+                        <div class="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30"></div>
+                        
+                        <div class="relative z-10 flex flex-col items-center justify-center h-full w-full py-4">
+                            <h2 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-yellow-400 to-yellow-600 drop-shadow-sm mb-2 uppercase">
+                                БОНУС ИГРА!
+                            </h2>
+                            
+                            <div class="text-white text-sm font-bold mb-4 opacity-90">
+                                ВЫ ВЫИГРАЛИ <span class="text-yellow-400 text-lg">15</span> FREE SPINS
+                            </div>
+
+                            <!-- Контейнер для символа (всегда на месте) -->
+                            <div class="w-32 h-32 bg-slate-900 rounded-2xl border-4 border-yellow-500 flex items-center justify-center text-6xl shadow-[0_0_50px_rgba(234,179,8,0.3)] mb-6 relative shrink-0">
+                                <div id="selection-symbol" class="text-white">❓</div>
+                            </div>
+
+                            <!-- Текст статуса (фиксированная высота чтобы не прыгало) -->
+                            <div class="h-8 mb-4 w-full flex justify-center items-center">
+                                <p id="selection-text" class="text-slate-300 text-xs font-bold tracking-widest uppercase">
+                                    ОПРЕДЕЛИМ БОНУСНЫЙ СИМВОЛ
+                                </p>
+                            </div>
+
+                            <!-- Кнопка (одна на все этапы) -->
+                            <button id="bonus-action-btn" class="w-full max-w-xs py-4 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-xl text-xl font-black text-white shadow-xl hover:scale-105 active:scale-95 transition-all border-t border-white/20">
+                                КРУТИТЬ
+                            </button>
+                        </div>
+                    `;
+                    
+                    // Вешаем событие на кнопку - запуск рулетки
+                    document.getElementById('bonus-action-btn').onclick = () => this.runSymbolSelectionAnimation();
+                    
+                    this.ui.bonusModal.classList.remove('hidden');
+                    AudioSys.bonusStart();
+                }
+
+                // --- ИСПРАВЛЕННАЯ АНИМАЦИЯ ---
+                runSymbolSelectionAnimation() {
+                    const validSymbols = ASSETS.filter(a => a.id >= 1 && a.id <= 7);
+                    const symbolEl = document.getElementById('selection-symbol');
+                    const textEl = document.getElementById('selection-text');
+                    const btn = document.getElementById('bonus-action-btn');
+
+                    // 1. Прячем кнопку и меняем текст статуса
+                    btn.classList.add('opacity-0', 'pointer-events-none'); // Скрываем плавно
+                    textEl.innerText = "ВЫБИРАЕМ БОЕВУЮ БОМБУ...";
+                    textEl.classList.add('animate-pulse', 'text-yellow-400');
+
+                    let delay = 50; 
+                    let prevSymbolId = -1;
+
+                    // Функция вращения
+                    const spin = () => {
+                        // Выбор случайного символа
+                        let rand;
+                        do {
+                            rand = validSymbols[Math.floor(Math.random() * validSymbols.length)];
+                        } while (rand.id === prevSymbolId);
+                        prevSymbolId = rand.id;
+
+                        // Обновляем символ
+                        symbolEl.innerText = rand.val;
+                        
+                        // --- УБРАН БЛЮР (blur-motion) ПО ПРОСЬБЕ ---
+                        // symbolEl.classList.add('blur-motion'); <--- Удалено
+
+                        AudioSys.tick();
+
+                        if (delay < 500) {
+                            delay = Math.floor(delay * 1.15);
+                            setTimeout(spin, delay);
+                        } else {
+                            // ФИНАЛ
+                            this.bonusTargetSymbol = rand;
+                            
+                            // Эффект "приземления" символа
+                            symbolEl.classList.remove('blur-motion'); // На всякий случай
+                            symbolEl.classList.add('symbol-landed');
+                            
+                            AudioSys.selected();
+                            
+                            // Обновляем текст
+                            textEl.classList.remove('animate-pulse');
+                            textEl.innerHTML = `СИМВОЛ ВЫБРАН: <span class="text-white text-lg">${rand.val}</span>`;
+                            
+                            // Возвращаем кнопку, но уже с новой функцией
+                            btn.innerText = "НАЧАТЬ ИГРУ";
+                            btn.classList.remove('opacity-0', 'pointer-events-none', 'bg-gradient-to-r', 'from-yellow-500', 'to-orange-600');
+                            // Делаем кнопку зеленой для старта
+                            btn.classList.add('bg-green-600', 'hover:bg-green-500', 'btn-pop-in');
+                            
+                            // Теперь кнопка запускает саму игру
+                            btn.onclick = () => this.startActualBonusGame();
+                        }
+                    };
+
+                    spin();
+                }
+
+                startActualBonusGame() {
+                    this.isWaitBonus = false; 
                     this.ui.bonusModal.classList.add('hidden');
                     this.isBonusMode = true;
                     this.freeSpins = 15;
-                    this.auto = false; // Выключаем обычное авто
-                    this.ui.btnAuto.classList.remove('active-auto');
-                    
                     this.updateUI();
                     AudioSys.bonusStart();
-                    
-                    // Запуск первого бесплатного спина
                     setTimeout(() => this.spin(), 1000);
+                    this.bonusSessionWin = 0; // Сбрасываем счетчик сессии
+                    this.ui.bonusTotalDisplay.innerText = "0"; // Обновляем визуал
                 }
 
                 endBonusRound() {
                     this.isBonusMode = false;
-                    
-                    // --- ИСПРАВЛЕНИЕ: Принудительно включаем кнопку ---
+                    this.bonusTargetSymbol = null;
                     this.ui.btnSpin.disabled = false; 
-                    // --------------------------------------------------
-
                     this.updateUI();
-                    this.showFloatingText("BONUS COMPLETE");
+                    
+                    // Показываем сколько всего подняли за бонус
+                    this.showFloatingText(`TOTAL WIN: ${this.bonusSessionWin}`, true);
                     AudioSys.win();
                 }
 
+                async processBombs(grid) {
+                    let bombs = [];
+                    // 1. Сначала находим все бомбы на поле
+                    grid.forEach((col, c) => col.forEach((s, r) => {
+                        if (s.id === 9) bombs.push({c, r});
+                    }));
+
+                    if (bombs.length === 0) return; 
+
+                    // 2. Взрываем их по очереди
+                    for (const b of bombs) {
+                        const replacement = this.bonusTargetSymbol || ASSETS.find(a => a.id === 1); // Фоллбэк на вишню
+
+                        // Визуально начинаем тикать текущей бомбой
+                        const bombEl = this.reels[b.c].el.children[b.r];
+                        if (bombEl) {
+                            bombEl.classList.add('bomb-tick');
+                            AudioSys.bombTick();
+                        }
+                        
+                        // Ждем перед взрывом
+                        await new Promise(r => setTimeout(r, 600)); 
+
+                        // БАБАХ!
+                        AudioSys.bombExplode();
+                        this.triggerShake(); // Тряска экрана (если ты её добавлял)
+                        
+                        // 3. Обрабатываем радиус поражения
+                        for (let c = b.c - 1; c <= b.c + 1; c++) {
+                            for (let r = b.r - 1; r <= b.r + 1; r++) {
+                                // Проверка границ поля
+                                if (c >= 0 && c < 5 && r >= 0 && r < 3) {
+                                    const targetId = grid[c][r].id;
+
+                                    // --- ИСПРАВЛЕНИЕ ТУТ ---
+                                    
+                                    // 1. Скаттер (8) не трогаем никогда
+                                    if (targetId === 8) continue; 
+
+                                    // 2. Если в клетке БОМБА (9), и это НЕ та бомба, которая сейчас взрывается...
+                                    // ...то мы её НЕ трогаем. Пусть ждет своей очереди.
+                                    if (targetId === 9 && (c !== b.c || r !== b.r)) continue;
+
+                                    // -----------------------
+
+                                    // Заменяем данные в сетке
+                                    grid[c][r] = replacement;
+                                    
+                                    // Обновляем визуал
+                                    const cell = this.reels[c].el.children[r];
+                                    if(cell) {
+                                        cell.innerText = replacement.val;
+                                        cell.classList.remove('bomb-tick'); 
+                                        cell.classList.add('explosion-flash');
+                                        
+                                        // Очищаем вспышку
+                                        setTimeout(() => cell.classList.remove('explosion-flash'), 400);
+                                    }
+                                }
+                            }
+                        }
+                        // Небольшая пауза перед взрывом следующей бомбы в списке
+                        await new Promise(r => setTimeout(r, 400));
+                    }
+                }
+
                 async spin() {
+                    if(this.isSpinning || this.isWaitBonus) return;
                     const cost = this.getTotalBet();
-                    
-                    // Проверка возможности спина
-                    // Если бонус - баланс не важен. Если обычная - нужен баланс.
-                    if(this.isSpinning) return;
                     if(!this.isBonusMode && this.balance < cost) {
                         if(this.auto) this.toggleAuto();
                         return;
                     }
 
                     this.stopWinAnimation();
-                    this.isSpinning = true;
+                    this.isSpinning = true; 
 
-                    // Списание денег (только если не бонус)
                     if (!this.isBonusMode) {
                         this.balance -= cost;
                         this.ui.win.innerText = "0";
                     } else {
-                        // В бонусе уменьшаем счетчик
                         this.freeSpins--;
                         if(this.freeSpins < 0) this.freeSpins = 0;
                     }
 
-                    this.ui.btnSpin.disabled = true;
-                    document.querySelectorAll('.win-pulse').forEach(el => el.classList.remove('win-pulse'));
-                    this.updateUI();
-                    
+                    this.updateUI(); 
+                    AudioSys.spin(); 
+
                     const resultGrid = this.getResults(); 
 
                     let crownsPerReel = resultGrid.map(col => col.some(s => s.id === 8) ? 1 : 0);
-                    
                     const promises = this.reels.map((reel, i) => {
                         const delay = i; 
                         let duration = 800 + (i * 200);
                         let extraSymbols = 6 + i;
-
-                        // 1. Находим индексы всех барабанов с коронами СЛЕВА от текущего (i)
                         let previousCrownIndices = [];
                         for(let k=0; k < i; k++) {
                             if(crownsPerReel[k] === 1) previousCrownIndices.push(k);
                         }
-
-                        // 2. Если слева уже есть 2 или больше короны
                         if(previousCrownIndices.length >= 2) {
-                            // Берем индекс барабана, где выпала именно ВТОРАЯ корона
                             const secondCrownIndex = previousCrownIndices[1];
-                            
-                            // Считаем множитель на основе позиции второй короны
-                            // Если вторая корона на 2-м барабане, то 3-й (i=3) получит: 3 - 2 - 1 = 0
                             const multiplier = i - secondCrownIndex - 1;
-
-                            // Применяем
-                            duration += 2000 + (multiplier * 2000); 
-                            extraSymbols = 15 + (multiplier * 15); 
+                            duration += 1600 + (multiplier * 1600); 
+                            extraSymbols = 24 + (multiplier * 24) + (i *2); 
                         }
-
                         return new Promise(r => setTimeout(() => {
-                            AudioSys.spin();
                             if(crownsPerReel[i] === 1) {
-                                // Звук скаттера чуть раньше конца вращения
-                                setTimeout(() => AudioSys.scatter(), duration - 300);
+                            // Считаем скаттеры, которые УЖЕ выпали (включая текущий)
+                            const currentScattersCount = crownsPerReel.slice(0, i + 1).reduce((a, b) => a + b, 0);
+                            // Считаем сколько барабанов осталось впереди
+                            const remainingReels = 4 - i;
+
+                            // Звук играет только если теоретически еще возможно собрать 3 скаттера
+                            if (currentScattersCount + remainingReels >= 3) {
+                                setTimeout(() => AudioSys.scatter(), duration - 20);
                             }
-                            reel.spin(resultGrid[i], duration, extraSymbols).then(r);
+                        }
+                            reel.spin(resultGrid[i], duration, extraSymbols, this.isBonusMode).then(r);
                         }, delay));
                     });
 
                     await Promise.all(promises);
 
+                    if (this.isBonusMode) {
+                        await this.processBombs(resultGrid);
+                    }
+
                     this.checkWin(resultGrid);
                     
                     this.isSpinning = false;
-                    this.ui.btnSpin.disabled = false;
                     this.updateUI();
 
-                    // Логика повторного вращения
                     if (this.isBonusMode) {
-                        if (this.freeSpins > 0) {
-                            // Задержка 2000мс для бонуса
-                            setTimeout(() => this.spin(), 1000);
-                        } else {
-                            setTimeout(() => this.endBonusRound(), 1000);
-                        }
+                        if (this.freeSpins > 0) setTimeout(() => this.spin(), 1000);
+                        else setTimeout(() => this.endBonusRound(), 1000);
                     } else {
-                        // Обычный авто-спин (300мс)
-                        if(this.auto) setTimeout(() => this.spin(), 300);
+                        if(this.auto && !this.isWaitBonus) setTimeout(() => this.spin(), 300);
                     }
                 }
 
-                cycleWinLines(indices) {
-                    if (indices.length === 0) return;
-                    if (indices.length === 1) {
-                        this.ui.svg.innerHTML = '';
-                        this.drawLine(indices[0]);
-                        return;
-                    }
+                cycleWinLines(winLinesData) {
                     let currentIndex = 0;
+                    
                     const showNext = () => {
+                        // 1. Очищаем SVG линий
                         this.ui.svg.innerHTML = ''; 
-                        this.drawLine(indices[currentIndex]); 
-                        currentIndex = (currentIndex + 1) % indices.length;
+                        
+                        // 2. Убираем ПОДСВЕТКУ (Light) со всех символов
+                        // Это критически важно, чтобы старая линия перестала светиться
+                        document.querySelectorAll('.win-anim-light').forEach(el => {
+                             el.classList.remove('win-anim-light');
+                        });
+
+                        // 3. Берем текущую линию
+                        const currentData = winLinesData[currentIndex];
+                        
+                        // 4. Рисуем только эту линию
+                        this.drawLine(currentData.lineIdx); 
+
+                        // 5. Включаем ПОДСВЕТКУ только для символов этой линии
+                        currentData.symbols.forEach(pos => {
+                            this.addSymbolEffect(pos.c, pos.r, 'light');
+                        });
+                        
+                        // Переходим к следующему индексу
+                        currentIndex = (currentIndex + 1) % winLinesData.length;
                     };
+
+                    // Сразу показываем первую линию из цикла
                     showNext();
+                    // Ставим интервал смены (1000мс = 1 секунда)
                     this.winCycleInterval = setInterval(showNext, 1000);
+                }
+
+                animateCount(element, start, end, duration) {
+                    let startTimestamp = null;
+                    const step = (timestamp) => {
+                        if (!startTimestamp) startTimestamp = timestamp;
+                        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                        // Easing function для плавности (easeOutExpo)
+                        const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+                        
+                        const currentVal = Math.floor(progress * (end - start) + start);
+                        element.innerText = currentVal;
+                        
+                        if (progress < 1) {
+                            window.requestAnimationFrame(step);
+                        } else {
+                            element.innerText = end; // Гарантируем точное конечное значение
+                        }
+                    };
+                    window.requestAnimationFrame(step);
                 }
 
                 checkWin(grid) {
                     let totalWin = 0;
-                    let winLinesIndices = [];
+                    let winLinesData = []; 
 
-                    // 1. Lines
                     for(let i=0; i<this.lines; i++) {
                         const lineCfg = LINES_MAP[i];
                         if(!lineCfg) continue;
                         const p = lineCfg.path; 
+                        const lineSymbols = [grid[0][p[0]], grid[1][p[1]], grid[2][p[2]], grid[3][p[3]], grid[4][p[4]]];
                         
-                        const lineSymbols = [
-                            grid[0][p[0]], grid[1][p[1]], grid[2][p[2]], grid[3][p[3]], grid[4][p[4]]
-                        ];
+                        // Скаттер(8) и Бомба(9) в начале сразу ломают линию
+                        if (lineSymbols[0].id === 8 || lineSymbols[0].id === 9) continue;
 
-                        const firstSymbolId = lineSymbols[0].id;
-                        if(firstSymbolId === 8) continue;
+                        // Сбор статистики за один проход
+                        let targetId = null; // Какой символ собираем (вишня, лимон...)
+                        let len = 0;         // Общая длина совпавшей цепочки
+                        let wCount = 0;      // Клеверов в цепочке
+                        let rCount = 0;      // Обычных символов в цепочке
+                        let initialWilds = 0; // Клеверов подряд со старта
 
-                        let matchCount = 1;
-                        for(let k=1; k<5; k++) {
-                            if(lineSymbols[k].id === firstSymbolId) matchCount++;
-                            else break;
+                        for (let s of lineSymbols) {
+                            const sid = s.id;
+                            if (sid === 8 || sid === 9) break; // Стоп-символы
+
+                            // Считаем начальные вайлды (пока не встретили обычный)
+                            if (sid === 10 && targetId === null) initialWilds++;
+
+                            // Определяем цель, если еще не нашли
+                            if (sid !== 10 && targetId === null) targetId = sid;
+
+                            // Проверяем совпадение
+                            if (sid === 10 || sid === targetId || targetId === null) {
+                                len++;
+                                if (sid === 10) wCount++; else rCount++;
+                            } else {
+                                break; // Цепочка прервалась (другой символ)
+                            }
                         }
 
-                        if(matchCount >= 3) {
-                            const basePayout = this.betPerLine * lineSymbols[0].payout;
-                            let multiplier = matchCount === 3 ? 0.2 : (matchCount === 4 ? 0.5 : 1.0);
-                            const winAmount = Math.floor(basePayout * multiplier);
+                        // Принятие решения
+                        let finalCount = 0;
+                        let finalAssetId = null;
+
+                        if (targetId === null) {
+                            // Сценарий 1: Вся линия только из Клеверов
+                            if (len >= 3) {
+                                finalCount = len;
+                                finalAssetId = 10;
+                            }
+                        } else {
+                            // Сценарий 2: Смешанная линия
+                            if (len >= 3 && rCount > wCount) {
+                                // Правило выполнено: Обычных > Клеверов
+                                finalCount = len;
+                                finalAssetId = targetId;
+                            } 
+                            else if (initialWilds >= 3) {
+                                // Правило провалено (клеверов слишком много), 
+                                // НО начало линии состоит из 3+ клеверов -> Платим как за Клеверы
+                                finalCount = initialWilds;
+                                finalAssetId = 10;
+                            }
+                        }
+
+                        // Выплата
+                        if (finalCount > 0) {
+                            const asset = ASSETS.find(a => a.id === finalAssetId);
+                            const mult = finalCount === 3 ? 0.2 : (finalCount === 4 ? 0.5 : 1.0);
+                            totalWin += Math.floor(this.betPerLine * asset.payout * mult);
                             
-                            totalWin += winAmount;
-                            winLinesIndices.push(i);
-                            for(let k=0; k<matchCount; k++) { this.highlightSymbol(k, p[k]); }
+                            let coords = [];
+                            for(let k=0; k<finalCount; k++) { 
+                                coords.push({ c: k, r: p[k] });
+                                this.addSymbolEffect(k, p[k], 'scale'); 
+                                this.addSymbolEffect(k, p[k], 'light');
+                            }
+                            winLinesData.push({ lineIdx: i, symbols: coords });
                         }
                     }
 
-                    // 2. Scatters (Crowns)
                     let scatterCount = 0;
-                    let scatterPositions = [];
+                    let scatterPositions = []; 
 
                     grid.forEach((col, colIdx) => {
                         col.forEach((s, rowIdx) => {
@@ -824,85 +1167,120 @@
                     });
 
                     if(scatterCount >= 3) {
-                        const scatterWin = SCATTER_PAYOUTS[scatterCount] || 0;
-                        totalWin += scatterWin;
-                        scatterPositions.forEach(pos => this.highlightSymbol(pos.c, pos.r));
+                        scatterPositions.forEach(pos => {
+                            this.addSymbolEffect(pos.c, pos.r, 'scale');
+                            this.addSymbolEffect(pos.c, pos.r, 'light');
+                        });
+                        totalWin += (SCATTER_PAYOUTS[scatterCount] || 0);
                         
-                        // BONUS TRIGGER LOGIC
                         if (this.isBonusMode) {
-                            // RETRIGGER (Если уже в бонусе - просто добавляем спины)
                             this.freeSpins += 15;
-                            this.showFloatingText("+15 FREE SPINS!");
+                            this.showFloatingText("+15 FREE SPINS!", true); 
                             AudioSys.bonusStart();
-                            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#fbbf24'] });
+                            confetti({ particleCount: 40, spread: 60, origin: { y: 0.6 }, colors: ['#fbbf24'], scalar: 1.3 });
                         } else {
-                            // START NEW BONUS (Если обычная игра)
+                            this.isWaitBonus = true; 
+                            this.auto = false; 
+                            this.ui.btnAuto.classList.remove('active-auto');
                             
-                            // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
-                            this.auto = false; // Принудительно выключаем авто
-                            this.ui.btnAuto.classList.remove('active-auto'); // Убираем подсветку кнопки
-                            // -------------------------
+                            // --- НОВАЯ ЛОГИКА ОЧЕРЕДИ ---
+                            // Проверяем, будет ли показано окно Big Win (условие x20 от ставки)
+                            const isBigWin = totalWin >= this.getTotalBet() * 20;
 
-                            setTimeout(() => {
-                                this.ui.bonusModal.classList.remove('hidden');
-                                AudioSys.bonusStart();
-                                confetti({ particleCount: 300, spread: 120, origin: { y: 0.6 }, colors: ['#fbbf24', '#818cf8'] });
-                            }, 500);
-                        }
-                    }
-
-                    if(totalWin > 0) {
-                        this.balance += totalWin;
-                        this.ui.win.innerText = totalWin; 
-                        
-                        if(!this.isBonusMode) {
-                             this.ui.status.innerHTML = `<span class="text-yellow-400 font-bold animate-pulse">ВЫИГРЫШ: ${totalWin}!</span>`;
-                        }
-                        
-                        AudioSys.win();
-                        
-                        if (winLinesIndices.length > 0) {
-                            this.ui.svg.innerHTML = '';
-                            winLinesIndices.forEach(idx => this.drawLine(idx));
-                            if (winLinesIndices.length > 1) {
-                                this.winCycleTimeout = setTimeout(() => {
-                                    this.cycleWinLines(winLinesIndices);
+                            if (isBigWin) {
+                                // Если большой выигрыш - ставим бонус в очередь.
+                                // Он запустится только в game.closeWinModal()
+                                this.queuedBonus = true;
+                            } else {
+                                // Если выигрыш обычный - запускаем бонус как раньше (через 1 сек)
+                                setTimeout(() => {
+                                    this.showBonusEntryModal();
+                                    confetti({ particleCount: 100, spread: 100, origin: { y: 0.6 }, colors: ['#fbbf24', '#818cf8'], scalar: 1.2, ticks: 200 });
                                 }, 1000);
                             }
                         }
+                    } 
 
+                    if(totalWin > 0) {
+                        // Анимация изменения баланса
+                        const oldBalance = this.balance;
+                        this.balance += totalWin;
+                        this.animateCount(this.ui.bal, oldBalance, this.balance, 1500);
+
+                        // --- ЛОГИКА БОНУСНОГО СЧЕТЧИКА ---
+                        if (this.isBonusMode) {
+                            this.bonusSessionWin += totalWin;
+                            // Тоже анимируем число для красоты
+                            this.animateCount(this.ui.bonusTotalDisplay, this.bonusSessionWin - totalWin, this.bonusSessionWin, 1000);
+                        }
+                        // ----------------------------------
+
+                        this.ui.win.innerText = totalWin; 
+                        
+                        if(!this.isBonusMode) this.ui.status.innerHTML = `<span class="text-yellow-400 font-bold animate-pulse">ВЫИГРЫШ: ${totalWin}!</span>`;
+                        AudioSys.win();
+                        
+                        if (winLinesData.length > 0) {
+                            this.ui.svg.innerHTML = '';
+                            winLinesData.forEach(w => this.drawLine(w.lineIdx));
+                            if (winLinesData.length > 1) {
+                                this.winCycleTimeout = setTimeout(() => this.cycleWinLines(winLinesData), 1000);
+                            }
+                        }
                         this.showFloatingText(`+${totalWin}`);
                         if(totalWin >= this.getTotalBet() * 20) this.celebrateBigWin(totalWin);
                     }
                 }
 
-                highlightSymbol(colIdx, rowIdx) {
-                    const col = this.reels[colIdx].el;
-                    const symbols = col.children;
-                    if(symbols[rowIdx]) symbols[rowIdx].classList.add('win-pulse');
+                addSymbolEffect(c, r, type) {
+                    const col = this.reels[c].el;
+                    const symbol = col.children[r];
+                    if(symbol) {
+                        if(type === 'scale') symbol.classList.add('win-anim-scale');
+                        if(type === 'light') symbol.classList.add('win-anim-light');
+                    }
                 }
 
-                showFloatingText(txt) {
+                showFloatingText(txt, isSpecial = false) {
                     const el = document.createElement('div');
                     el.className = 'float-text';
+                    const duration = isSpecial ? 3000 : 1500;
+                    if (isSpecial) el.classList.add('float-bonus');
                     el.innerText = txt;
+                    const existingCount = document.querySelectorAll('.float-text').length;
+                    if (existingCount > 0) el.style.top = `calc(50% - ${existingCount * 60}px)`;
                     document.getElementById('game-wrapper').appendChild(el);
-                    setTimeout(() => el.remove(), 1500);
+                    setTimeout(() => el.remove(), duration);
                 }
 
                 celebrateBigWin(amount) {
-                    confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 }, colors: ['#fbbf24', '#ef4444', '#3b82f6', '#d946ef'] });
-                    if(!this.isBonusMode) { // В бонусе не прерываем модалкой big win, чтобы не тормозить процесс
+                    confetti({ 
+                        particleCount: 80, 
+                        spread: 100, 
+                        origin: { y: 0.6 }, 
+                        colors: ['#fbbf24', '#ef4444', '#3b82f6', '#d946ef'],
+                        scalar: 1.2, 
+                        ticks: 150   
+                    });
+                    if(!this.isBonusMode) { 
                         this.ui.modalAmt.innerText = amount;
                         this.ui.modal.classList.remove('hidden');
                     }
                 }
             }
 
+            function updateLayout() {
+                const container = document.getElementById('slot-machine');
+                if (!container) return;
+                const colWidth = container.clientWidth / 5;
+                document.documentElement.style.setProperty('--reel-height', `${colWidth}px`);
+                document.documentElement.style.setProperty('--symbol-sz', `${colWidth * 0.6}px`);
+            }
+
+            window.addEventListener('resize', updateLayout);
+            setTimeout(updateLayout, 0);   
+
             window.game = new SlotMachine();
     </script>
 </body>
 </html>
-
-
-
