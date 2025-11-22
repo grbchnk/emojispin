@@ -22,6 +22,7 @@
             user-select: none;
             overflow-y: auto;
             min-height: 100vh;
+            touch-action: manipulation; 
         }
 
         .glass-panel {
@@ -1298,8 +1299,24 @@
             setTimeout(updateLayout, 0);   
 
             window.game = new SlotMachine();
-    </script>
-</body>
+
+    // Блокировка зума жестами (щипок) на iOS
+    document.addEventListener('gesturestart', function(e) {
+        e.preventDefault();
+    });
+
+    // Блокировка зума двойным тапом (дополнительная защита)
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function(event) {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 300) {
+            event.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, false);
+</script>
+</body> <!-- Это самый конец вашего файла -->
 </html>
+
 
 
